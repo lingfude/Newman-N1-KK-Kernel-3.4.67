@@ -1,5 +1,4 @@
 /*
- * MD218A voice coil motor driver
  *
  *
  */
@@ -60,13 +59,11 @@ static int g_sr = 3;
 //extern s32 mt_set_gpio_out(u32 u4Pin, u32 u4PinOut);
 //extern s32 mt_set_gpio_dir(u32 u4Pin, u32 u4Dir);
 
-#define MAX_MOVE_STEP 30//35
-#define MOVE_INTERVAL 10 //in ms
 
 static int s4OV8825AF_ReadReg(unsigned short * a_pu2Result)
 {
     int  temp = 0;
-    char pBuff[2];
+    //char pBuff[2];
 
     temp = (OV8825AF_read_cmos_sensor(0x3618)+ (OV8825AF_read_cmos_sensor(0x3619)<<8))>>4;
 
@@ -80,7 +77,7 @@ static int s4OV8825AF_WriteReg(u16 a_u2Data)
     u16 temp,SlewRate=0;
     OV8825AFDB("s4OV8825AF_WriteReg = %d \n", a_u2Data);
 	
-	temp=(a_u2Data<<4)+8+SlewRate;
+	temp=(a_u2Data<<4)+0+SlewRate;
 	OV8825AFDB("-----stemp=(a_u2Data<<4)+8+SlewRate = %d----- \n", temp);
 	
 	OV8825AF_write_cmos_sensor(0x3619,(temp>>8)&0xff);
@@ -96,7 +93,6 @@ inline static int getOV8825AFInfo(__user stOV8825AF_MotorInfo * pstMotorInfo)
     stMotorInfo.u4MacroPosition   = g_u4OV8825AF_MACRO;
     stMotorInfo.u4InfPosition     = g_u4OV8825AF_INF;
     stMotorInfo.u4CurrentPosition = g_u4CurrPosition;
-	stMotorInfo.bIsSupportSR      = TRUE;
 	if (g_i4MotorStatus == 1)	{stMotorInfo.bIsMotorMoving = 1;}
 	else						{stMotorInfo.bIsMotorMoving = 0;}
 
@@ -111,62 +107,10 @@ inline static int getOV8825AFInfo(__user stOV8825AF_MotorInfo * pstMotorInfo)
     return 0;
 }
 
-//Main jobs:
-//Break down move step for eliminating noise
-static int breakDownSteps(int max_step, int interval, int CurrentPos, int TargetPos)
-{
-    unsigned short tmpTargetPos;
-    short sign = 0;
-    
-    OV8825AFDB("[OV8825AF] break down steps from=%d, to=%d \n", CurrentPos, TargetPos);
-    if (TargetPos < CurrentPos)
-        sign = -1;
-    else if (TargetPos > CurrentPos)
-        sign = 1;
-
-    while( abs(CurrentPos - TargetPos) > max_step ){
-        tmpTargetPos = CurrentPos + max_step * sign;
-            
-        OV8825AFDB("tmpTargetPos=%d\n", tmpTargetPos);
-        if(s4OV8825AF_WriteReg(tmpTargetPos) == 0)
-        {
-            CurrentPos = tmpTargetPos;
-            OV8825AFDB("CurrentPos=%d\n", CurrentPos);
-        }
-        else
-        {
-            OV8825AFDB("[OV8825AF] set I2C failed when moving the motor \n");
-            g_i4MotorStatus = -1;
-        }
-        
-        //Delay for few milli-second
-        OV8825AFDB("start delay \n");
-        msleep(interval);
-        OV8825AFDB("after delay \n");
-    }
-
-    OV8825AFDB("Last step from=%d, to=%d \n", CurrentPos, TargetPos);
-    if(s4OV8825AF_WriteReg(TargetPos) == 0)
-    {
-          CurrentPos = TargetPos;
-    }
-    else
-    {
-          OV8825AFDB("[OV8825AF] set I2C failed when moving the motor \n");
-          g_i4MotorStatus = -1;
-    }
-    g_u4CurrPosition = CurrentPos;
-    
-    OV8825AFDB("Leave breakdown\n");
-    
-    return 0;
-}
-
 inline static int moveOV8825AF(unsigned long a_u4Position)
 {
     int ret = 0;
-
-    OV8825AFDB("a_u4Position = %d \n", a_u4Position);
+    
     if((a_u4Position > g_u4OV8825AF_MACRO) || (a_u4Position < g_u4OV8825AF_INF))
     {
         OV8825AFDB("[OV8825AF] out of range \n");
@@ -177,17 +121,23 @@ inline static int moveOV8825AF(unsigned long a_u4Position)
     {
         unsigned short InitPos;
         ret = s4OV8825AF_ReadReg(&InitPos);
+
 	    
-        spin_lock(&g_OV8825AF_SpinLock);
         if(ret == 0)
         {
             OV8825AFDB("[OV8825AF] Init Pos %6d \n", InitPos);
+			
+			spin_lock(&g_OV8825AF_SpinLock);
             g_u4CurrPosition = (unsigned long)InitPos;
+			spin_unlock(&g_OV8825AF_SpinLock);
         }
         else
         {		
+			spin_lock(&g_OV8825AF_SpinLock);
             g_u4CurrPosition = 0;
+			spin_unlock(&g_OV8825AF_SpinLock);
         }
+		spin_lock(&g_OV8825AF_SpinLock);
         g_s4OV8825AF_Opened = 2;
         spin_unlock(&g_OV8825AF_SpinLock);
     }
@@ -205,37 +155,31 @@ inline static int moveOV8825AF(unsigned long a_u4Position)
         spin_unlock(&g_OV8825AF_SpinLock);			
     }
     else										{return 0;}
-    	
-    	
-    spin_lock(&g_OV8825AF_SpinLock);
-    //g_i4Position = (long)g_u4CurrPosition;
-    g_u4TargetPosition = a_u4Position;       
-    g_sr = 3;
-    g_i4MotorStatus = 0;
-    spin_unlock(&g_OV8825AF_SpinLock);    
 
-            
-    if(abs(g_u4CurrPosition - g_u4TargetPosition) > MAX_MOVE_STEP)
-    {
-        OV8825AFDB("[OV8825AF] in small stepLeave breakdown \n");
-        breakDownSteps(MAX_MOVE_STEP, MOVE_INTERVAL, g_u4CurrPosition, g_u4TargetPosition);
-    } 
-    else
-    {   
-        if(s4OV8825AF_WriteReg((unsigned short)g_u4TargetPosition) == 0)
-        {
-            spin_lock(&g_OV8825AF_SpinLock);      
-            g_u4CurrPosition = (unsigned long)g_u4TargetPosition;
-            spin_unlock(&g_OV8825AF_SpinLock);                
-        }
-        else
-        {
-            OV8825AFDB("[OV8825AF] set I2C failed when moving the motor \n");         
+    spin_lock(&g_OV8825AF_SpinLock);    
+    g_u4TargetPosition = a_u4Position;
+    spin_unlock(&g_OV8825AF_SpinLock);	
+
+    //OV8825AFDB("[OV8825AF] move [curr] %d [target] %d\n", g_u4CurrPosition, g_u4TargetPosition);
+
             spin_lock(&g_OV8825AF_SpinLock);
-            g_i4MotorStatus = -1;
-            spin_unlock(&g_OV8825AF_SpinLock);             
-        }
-    }
+            g_sr = 3;
+            g_i4MotorStatus = 0;
+            spin_unlock(&g_OV8825AF_SpinLock);	
+		
+            if(s4OV8825AF_WriteReg((unsigned short)g_u4TargetPosition) == 0)
+            {
+                spin_lock(&g_OV8825AF_SpinLock);		
+                g_u4CurrPosition = (unsigned long)g_u4TargetPosition;
+                spin_unlock(&g_OV8825AF_SpinLock);				
+            }
+            else
+            {
+                OV8825AFDB("[OV8825AF] set I2C failed when moving the motor \n");			
+                spin_lock(&g_OV8825AF_SpinLock);
+                g_i4MotorStatus = -1;
+                spin_unlock(&g_OV8825AF_SpinLock);				
+            }
 
     return 0;
 }
@@ -299,17 +243,15 @@ unsigned long a_u4Param)
 //CAM_RESET
 static int OV8825AF_Open(struct inode * a_pstInode, struct file * a_pstFile)
 {
-    spin_lock(&g_OV8825AF_SpinLock);
 
     if(g_s4OV8825AF_Opened)
     {
-        spin_unlock(&g_OV8825AF_SpinLock);
         OV8825AFDB("[OV8825AF] the device is opened \n");
         return -EBUSY;
     }
 
+    spin_lock(&g_OV8825AF_SpinLock);
     g_s4OV8825AF_Opened = 1;
-		
     spin_unlock(&g_OV8825AF_SpinLock);
 
     return 0;
@@ -326,10 +268,41 @@ static int OV8825AF_Release(struct inode * a_pstInode, struct file * a_pstFile)
     {
         OV8825AFDB("[OV8825AF] feee \n");
         g_sr = 5;
-	    s4OV8825AF_WriteReg(200);
-        msleep(10);
-	    s4OV8825AF_WriteReg(100);
-        msleep(10);
+
+        if (g_u4CurrPosition > 700)  {
+            s4OV8825AF_WriteReg(700);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 600)  {
+            s4OV8825AF_WriteReg(600);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 500)  {
+            s4OV8825AF_WriteReg(500);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 400)  {
+            s4OV8825AF_WriteReg(400);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 300)  {
+            s4OV8825AF_WriteReg(300);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 200)  {
+	        s4OV8825AF_WriteReg(200);
+            msleep(3);
+        }
+
+        if (g_u4CurrPosition > 100)   {
+	        s4OV8825AF_WriteReg(100);
+            msleep(3);
+        }
             	            	    	    
         spin_lock(&g_OV8825AF_SpinLock);
         g_s4OV8825AF_Opened = 0;
