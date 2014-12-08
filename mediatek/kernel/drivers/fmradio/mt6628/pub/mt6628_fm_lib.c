@@ -1092,24 +1092,12 @@ static fm_s32 mt6628_GetCurRSSI(fm_s32 *pRSSI)
     return 0;
 }
 
-//<2014/11/10-qus1: test The minimum sound is too loud when playing FM radio
-#if defined(TINNO_ANDROID_S9091)
-static fm_u16 mt6628_vol_tbl[16] = { \
-    0x0000, 0x0100, 0x0300, 0x0814, \
-    0x0A2B, 0x0CCD, 0x101D, 0x1449, \
-    0x198A, 0x2027, 0x287A, 0x32F5, \
-    0x4027, 0x50C3, 0x65AD, 0x7FFF
-};
-#else
 static fm_u16 mt6628_vol_tbl[16] = { \
     0x0000, 0x0519, 0x066A, 0x0814, \
     0x0A2B, 0x0CCD, 0x101D, 0x1449, \
     0x198A, 0x2027, 0x287A, 0x32F5, \
     0x4027, 0x50C3, 0x65AD, 0x7FFF
 };
-#endif
-//>2014/11/10-qus1
-
 static fm_s32 mt6628_SetVol(fm_u8 vol)
 {
     fm_s32 ret = 0;

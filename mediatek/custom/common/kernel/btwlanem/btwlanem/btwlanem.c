@@ -55,13 +55,6 @@ extern void mt_wifi_power_off(void);
 
 extern void mt65xx_eint_mask(unsigned int eint_num);
 extern void mt65xx_eint_unmask(unsigned int eint_num);
-extern void mt65xx_eint_set_hw_debounce(unsigned int eint_num, unsigned int ms);
-extern unsigned int mt65xx_eint_set_sens(unsigned int eint_num, unsigned int sens);
-extern void mt65xx_eint_registration(unsigned int eint_num, unsigned int is_deb_en, 
-			unsigned int pol, void (EINT_FUNC_PTR)(void), 
-			unsigned int is_auto_umask);
-
-
 
 wait_queue_head_t eint_wait;
 int eint_gen;

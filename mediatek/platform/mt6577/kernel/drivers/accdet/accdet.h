@@ -61,12 +61,6 @@ IOCTL
 #define KEY_CALL	KEY_SEND
 #define KEY_ENDCALL	KEY_HANGEUL
 
-//<2014/11/10-qus1. It can be answer a call when ring tone.
-#if defined(P175A20)
-#define KEY_ANSWER_CALL   KEY_PLAYPAUSE   //KEY_STOPCD  //KEY_CALL
-#endif
-//<2014/11/10-qus1
-
 /****************************************************
 globle ACCDET variables
 ****************************************************/
@@ -89,13 +83,7 @@ enum accdet_status
     STAND_BY =5
 };
 
-//<2014/11/10-qus1. for ACC_ANSWER_CALL.
-#if defined(P175A20)
-char *accdet_status_string[6]=
-#else
 char *accdet_status_string[5]=
-#endif
-//>2014/11/10-qus1.
 {
     "Plug_out",
     "Headset_plug_in",

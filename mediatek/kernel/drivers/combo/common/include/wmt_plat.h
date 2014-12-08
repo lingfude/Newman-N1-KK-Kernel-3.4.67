@@ -23,12 +23,15 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-//qus1 removed merge interface for 6577, 6628 
-//#if defined(MTK_MERGE_INTERFACE_SUPPORT) && (defined(MT6628) || defined(MT6630))
-    //#define MTK_WCN_CMB_MERGE_INTERFACE_SUPPORT 1
-//#else
+
+
+
+#if defined(MTK_MERGE_INTERFACE_SUPPORT) && (defined(MT6628) || defined(MT6630))
+    #define MTK_WCN_CMB_MERGE_INTERFACE_SUPPORT 1
+#else
     #define MTK_WCN_CMB_MERGE_INTERFACE_SUPPORT 0
-//#endif
+#endif
+
 
 #if (MTK_WCN_CMB_MERGE_INTERFACE_SUPPORT)
 //Supported AP platform:MT6589, MT6595, MT8135
