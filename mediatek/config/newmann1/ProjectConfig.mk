@@ -19,7 +19,7 @@ CUSTOM_HAL_BLUETOOTH = bluetooth
 CUSTOM_HAL_CAMERA = camera
 CUSTOM_HAL_CAM_CAL = dummy_eeprom
 CUSTOM_HAL_COMBO = mt6620
-CUSTOM_HAL_EEPROM=dummy_eeprom
+CUSTOM_HAL_EEPROM=m24c08f_eeprom #dummy_eeprom
 
 CUSTOM_HAL_FLASHLIGHT = constant_flashlight
 CUSTOM_HAL_IMGSENSOR = ov8825_mipi_raw ov7690_yuv ov7692_yuv
@@ -37,7 +37,7 @@ CUSTOM_KERNEL_CAMERA = camera
 CUSTOM_KERNEL_CAM_CAL = dummy_eeprom
 CUSTOM_KERNEL_CORE = src
 CUSTOM_KERNEL_DCT = dct
-CUSTOM_KERNEL_EEPROM = dummy_eeprom
+CUSTOM_KERNEL_EEPROM = m24c08f_eeprom #dummy_eeprom
 CUSTOM_KERNEL_FLASHLIGHT = constant_flashlight
 CUSTOM_KERNEL_HDMI = 
 CUSTOM_KERNEL_HEADSET = accdet
