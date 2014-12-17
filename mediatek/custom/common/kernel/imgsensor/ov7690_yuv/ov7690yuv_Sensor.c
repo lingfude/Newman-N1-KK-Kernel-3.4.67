@@ -1,91 +1,5 @@
-/* Copyright Statement:
- *
- * This software/firmware and related documentation ("MediaTek Software") are
- * protected under relevant copyright laws. The information contained herein
- * is confidential and proprietary to MediaTek Inc. and/or its licensors.
- * Without the prior written permission of MediaTek inc. and/or its licensors,
- * any reproduction, modification, use or disclosure of MediaTek Software,
- * and information contained herein, in whole or in part, shall be strictly prohibited.
- *
- * MediaTek Inc. (C) 2010. All rights reserved.
- *
- * BY OPENING THIS FILE, RECEIVER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
- * THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
- * RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO RECEIVER ON
- * AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
- * NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
- * SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
- * SUPPLIED WITH THE MEDIATEK SOFTWARE, AND RECEIVER AGREES TO LOOK ONLY TO SUCH
- * THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. RECEIVER EXPRESSLY ACKNOWLEDGES
- * THAT IT IS RECEIVER'S SOLE RESPONSIBILITY TO OBTAIN FROM ANY THIRD PARTY ALL PROPER LICENSES
- * CONTAINED IN MEDIATEK SOFTWARE. MEDIATEK SHALL ALSO NOT BE RESPONSIBLE FOR ANY MEDIATEK
- * SOFTWARE RELEASES MADE TO RECEIVER'S SPECIFICATION OR TO CONFORM TO A PARTICULAR
- * STANDARD OR OPEN FORUM. RECEIVER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND
- * CUMULATIVE LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
- * AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
- * OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY RECEIVER TO
- * MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
- *
- * The following software/firmware and/or related documentation ("MediaTek Software")
- * have been modified by MediaTek Inc. All revisions are subject to any receiver's
- * applicable license agreements with MediaTek Inc.
- */
 
-/*****************************************************************************
-*  Copyright Statement:
-*  --------------------
-*  This software is protected by Copyright and the information contained
-*  herein is confidential. The software may not be copied and the information
-*  contained herein may not be used or disclosed except with the written
-*  permission of MediaTek Inc. (C) 2005
-*
-*  BY OPENING THIS FILE, BUYER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
-*  THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
-*  RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO BUYER ON
-*  AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
-*  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
-*  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
-*  NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
-*  SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
-*  SUPPLIED WITH THE MEDIATEK SOFTWARE, AND BUYER AGREES TO LOOK ONLY TO SUCH
-*  THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. MEDIATEK SHALL ALSO
-*  NOT BE RESPONSIBLE FOR ANY MEDIATEK SOFTWARE RELEASES MADE TO BUYER'S
-*  SPECIFICATION OR TO CONFORM TO A PARTICULAR STANDARD OR OPEN FORUM.
-*
-*  BUYER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND CUMULATIVE
-*  LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
-*  AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
-*  OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY BUYER TO
-*  MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE. 
-*
-*  THE TRANSACTION CONTEMPLATED HEREUNDER SHALL BE CONSTRUED IN ACCORDANCE
-*  WITH THE LAWS OF THE STATE OF CALIFORNIA, USA, EXCLUDING ITS CONFLICT OF
-*  LAWS PRINCIPLES.  ANY DISPUTES, CONTROVERSIES OR CLAIMS ARISING THEREOF AND
-*  RELATED THERETO SHALL BE SETTLED BY ARBITRATION IN SAN FRANCISCO, CA, UNDER
-*  THE RULES OF THE INTERNATIONAL CHAMBER OF COMMERCE (ICC).
-*
-*****************************************************************************/
 
-/*****************************************************************************
- *
- * Filename:
- * ---------
- *   Sensor.c
- *
- * Project:
- * --------
- *   DUMA
- *
- * Description:
- * ------------
- *   Image sensor driver function
- *
- *------------------------------------------------------------------------------
- * Upper this line, this part is controlled by PVCS VM. DO NOT MODIFY!!
- *============================================================================
- ****************************************************************************/
 #include <linux/videodev2.h>
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
@@ -178,23 +92,6 @@ static struct
   kal_uint16 LineLength;
   //sensor_data_struct *NvramData;
 } OV7690Sensor;
-/*************************************************************************
-* FUNCTION
-*    OV7690HalfAdjust
-*
-* DESCRIPTION
-*    This function dividend / divisor and use round-up.
-*
-* PARAMETERS
-*    DividEnd
-*    Divisor
-*
-* RETURNS
-*    [DividEnd / Divisor]
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 __inline static kal_uint32 OV7690HalfAdjust(kal_uint32 DividEnd, kal_uint32 Divisor)
 {
   return (DividEnd + (Divisor >> 1)) / Divisor; /* that is [DividEnd / Divisor + 0.5]*/
@@ -202,26 +99,10 @@ __inline static kal_uint32 OV7690HalfAdjust(kal_uint32 DividEnd, kal_uint32 Divi
 
 
 
-/*************************************************************************
-* FUNCTION
-*    OV7690SetMirror
-*
-* DESCRIPTION
-*    This function set the Mirror to the CMOS sensor
-*
-* PARAMETERS
-*    Mirror
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690SetMirror(kal_uint8 Mirror)
 {
   kal_uint8 Reg = 0x16;
-  printk("\r\n zhaoshaopeng Mirror =%d \r\n", Mirror);
+  
   if (OV7690Sensor.Mirror == Mirror)
   {
     return;
@@ -238,31 +119,10 @@ static void OV7690SetMirror(kal_uint8 Mirror)
   case IMAGE_HV_MIRROR:
     Reg |= 0xC0;
     break;
-    //zhaoshaopeng add for k504 i8
-  case IMAGE_NORMAL:
-    Reg |= 0x00;//0x80;
-    break;
-    //zhaoshaopeng end
   }
   OV7690_write_cmos_sensor(0x0C, Reg);
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690SetClock
-*
-* DESCRIPTION
-*    This function set sensor vt clock and op clock
-*
-* PARAMETERS
-*    Clk: vt clock
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690SetClock(kal_uint32 Clk)
 {
   static const kal_uint8 ClkSetting[][1] =
@@ -283,79 +143,22 @@ static void OV7690SetClock(kal_uint32 Clk)
   case 6500000:  i = 1; break;
   default: ASSERT(0);
   }
-/*
-  PLL Control:
-  PLL clock(f1) = MCLK x N / M, where
-    reg29[7:6]: PLL divider
-      00: /1, 01: /2, 10: /3, 11: /4
-    reg29[5:4]: PLL output control
-      00: Bypass PLL, 01: 4x, 10: 6x, 11: 8x
-  Int. clock(f2) = f1 / (reg0x11[5:0] + 1)
-  PCLK = f2 / 2 / L, where L = 1 if 0x3E[4] = 1, otherwise L = 2
-*/
-  OV7690_write_cmos_sensor(0x11, ClkSetting[i][0]);
+ // OV7690_write_cmos_sensor(0x11, ClkSetting[i][0]);
+  OV7690_write_cmos_sensor(0x11, 0X00);
 }
 
 #if 0 /* not referenced currently */
-/*************************************************************************
-* FUNCTION
-*    OV7690WriteShutter
-*
-* DESCRIPTION
-*    This function apply Shutter to sensor
-*
-* PARAMETERS
-*    Shutter: integration time
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690WriteShutter(kal_uint32 Shutter)
 {
   OV7690_write_cmos_sensor(0x10, Shutter);
   OV7690_write_cmos_sensor(0x0F, Shutter >> 8);
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690ReadShutter
-*
-* DESCRIPTION
-*    This function get shutter from sensor
-*
-* PARAMETERS
-*    None
-*
-* RETURNS
-*    Shutter: integration time
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static kal_uint16 OV7690ReadShutter(void)
 {
   return (OV7690_read_cmos_sensor(0x0F) << 8)|OV7690_read_cmos_sensor(0x10);
 }
 #endif
-/*************************************************************************
-* FUNCTION
-*    OV7690LSCSetting
-*
-* DESCRIPTION
-*    This function set Lens Shading Correction.
-*
-* PARAMETERS
-*    None
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690LSCSetting(void)
 {
   static const kal_uint8 Data[] =
@@ -366,10 +169,12 @@ static void OV7690LSCSetting(void)
     0x90,0x18,0x10,0x00,0x32,0x2c,0x30,
 #elif 0 /* Phoenix F28 */
     0x90,0x18,0xb0,0xA0,0x32,0x2c,0x30,
-#elif 1 /* Phoenix F24 */
+#elif 0 /* Phoenix F24 */
     0x90,0x00,0xa0,0x80,0x18,0x14,0x15,
 #elif 0 /* Dongya F24 */
     0x90,0x18,0x10,0x00,0x32,0x2c,0x30,
+ #elif 1 /*TCL */
+ 	0x90,0x10,0x00,0x10,0x18,0x10,0x14,		/*modify by KeJun 20110914*/
 #endif
   };
   
@@ -382,22 +187,6 @@ static void OV7690LSCSetting(void)
   OV7690_write_cmos_sensor(0x8b, Data[6]);
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690AeEnable
-*
-* DESCRIPTION
-*    disable/enable AE
-*
-* PARAMETERS
-*    Enable
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690AeEnable(kal_bool Enable)
 {
   const kal_bool AeEnable = (OV7690Sensor.Ctrl3A&0x05) ? KAL_TRUE : KAL_FALSE;
@@ -417,32 +206,17 @@ static void OV7690AeEnable(kal_bool Enable)
   }
   else
   {
-    OV7690Sensor.Ctrl3A &= 0xFA;//f8
+    OV7690Sensor.Ctrl3A &= 0xF8;
     /* extra line can not be set if not fix frame rate!!! */
     OV7690Sensor.Reg15 &= 0x7F;
   }
   OV7690_write_cmos_sensor(0x13, OV7690Sensor.Ctrl3A);
-  OV7690_write_cmos_sensor(0x15, OV7690Sensor.Reg15);
+ //OV7690_write_cmos_sensor(0x15, OV7690Sensor.Reg15);
+  OV7690_write_cmos_sensor(0x15, 0x00);//c4
 }
 
 
 
-/*************************************************************************
-* FUNCTION
-*    OV7690AwbEnable
-*
-* DESCRIPTION
-*    disable/enable awb
-*
-* PARAMETERS
-*    Enable
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690AwbEnable(kal_bool Enable)
 {
   const kal_bool AwbEnable = (OV7690Sensor.Ctrl3A&0x02) ? KAL_TRUE : KAL_FALSE;
@@ -457,32 +231,17 @@ static void OV7690AwbEnable(kal_bool Enable)
   }
   if (Enable && AWB_MODE_AUTO == OV7690Sensor.Wb)
   {
+		  printk("XXXXXXXXXXXXXX AUTO MODE XXXXXXXX\n");
     OV7690Sensor.Ctrl3A |= 0x02;
   }
   else
   {
+		  printk("XXXXXXXXXXXXXX BBB MODE XXXXXXXX\n");
     OV7690Sensor.Ctrl3A &= 0xFD;
   }
   OV7690_write_cmos_sensor(0x13, OV7690Sensor.Ctrl3A);
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690SetDummy
-*
-* DESCRIPTION
-*    This function add DummyPixel and DummyLine.
-*
-* PARAMETERS
-*    DummyPixel
-*    DummyLine
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690SetDummy(kal_uint16 DummyPixel, kal_uint16 DummyLine)
 {
   kal_bool update = KAL_FALSE; /* need config banding */
@@ -531,23 +290,6 @@ static void OV7690SetDummy(kal_uint16 DummyPixel, kal_uint16 DummyLine)
   }
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690CalFps
-*
-* DESCRIPTION
-*    This function calculate & set frame rate and fix frame rate when video mode
-*    MUST BE INVOKED AFTER OV7690_preview() !!!
-*
-* PARAMETERS
-*    None
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690CalFps(void)
 {
   /* camera preview also fix frame rate for auto frame rate will cause AE peak */
@@ -601,41 +343,17 @@ static void OV7690CalFps(void)
     }
     OV7690_write_cmos_sensor(0x15, OV7690Sensor.Reg15);
     OV7690Sensor.Reg15 |= 0x80;
-    OV7690_write_cmos_sensor(0x15, OV7690Sensor.Reg15);
+    //OV7690_write_cmos_sensor(0x15, OV7690Sensor.Reg15);
+    //Modified by YQYan
+    OV7690_write_cmos_sensor(0x15, 0x00);//c4
   }
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690InitialSetting
-*
-* DESCRIPTION
-*    This function initialize the registers of CMOS sensor
-*
-* PARAMETERS
-*    None
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690InitialSetting(void)
 {
   OV7690_write_cmos_sensor(0x12, 0x80); /* [7]: software reset */
   Sleep(5);
-  OV7690_write_cmos_sensor(0x0C, 0x16);//16,56,96,d6
-/*
-  Please update reg0x48 from 40 to 42. Also, please apply the rule for OV7690.
-  If DOVDD = 1.7 - 2.0V, then reg0x49 = 0x0C
-  IF DOVDD = 2.1 - 2.5V, then reg0x49 = 0x04
-  If DOVDD = 2.6 - 3.0V, then reg0x49 = 0x0D
-  
-  That is, for example, if your DOVDD = 2.8v, please insert setting as below.
-  reg0x48 = 0x42
-  reg0x49 = 0x0D
-*/
+  OV7690_write_cmos_sensor(0x0C, 0x16);
   OV7690_write_cmos_sensor(0x48, 0x42); /* 1.75x pre-gain */
   OV7690_write_cmos_sensor(0x49, 0x0D); /* releated IO voltage */
   OV7690_write_cmos_sensor(0x41, 0x43);
@@ -643,14 +361,14 @@ static void OV7690InitialSetting(void)
   OV7690_write_cmos_sensor(0x16, 0x03);
   OV7690_write_cmos_sensor(0x39, 0x80);
   
-  /* Clock */ 
-  OV7690_write_cmos_sensor(0x11, 0x00);
+  /* Clock */
+  OV7690_write_cmos_sensor(0x11, 0x00);//0x00-30fps 0x01-15fps
   OV7690_write_cmos_sensor(0x3E, 0x30);
   
   /* Isp common */
   OV7690_write_cmos_sensor(0x13, 0xF7);
   OV7690_write_cmos_sensor(0x14, 0x21); /* 8x gain ceiling, PPChrg off */
-  OV7690_write_cmos_sensor(0x15, 0x04);
+  OV7690_write_cmos_sensor(0x15, 0x00);//0xa4
   OV7690_write_cmos_sensor(0x1E, 0x33);
   OV7690_write_cmos_sensor(0x0E, 0x03); /* driving capability: 0x00:1x, 0x01:2x, 0x02:3x, 0x03:4x */
   OV7690_write_cmos_sensor(0xD2, 0x04); /* SDE ctrl */
@@ -665,7 +383,7 @@ static void OV7690InitialSetting(void)
   
   /* Resolution */
   OV7690_write_cmos_sensor(0x2A, 0x30); /* linelength */
-  OV7690_write_cmos_sensor(0x2B, 0x4E);
+  OV7690_write_cmos_sensor(0x2B, 0x0b);
   OV7690_write_cmos_sensor(0x2C, 0x00); /* dummy line */
   OV7690_write_cmos_sensor(0x17, OV7690_IMAGE_SENSOR_HSTART); /* H window start line */
   OV7690_write_cmos_sensor(0x18, (OV7690_IMAGE_SENSOR_HACTIVE + 0x10) >> 2); /* H sensor size */
@@ -680,119 +398,123 @@ static void OV7690InitialSetting(void)
   OV7690_write_cmos_sensor(0xCE, OV7690_IMAGE_SENSOR_VACTIVE >> 8);
   OV7690_write_cmos_sensor(0xCF, OV7690_IMAGE_SENSOR_VACTIVE);/* ISP output vsize */
   
-      /*OV7690_LSC_setting();*/
-            OV7690_write_cmos_sensor(0x80, 0x7f);
-            OV7690_write_cmos_sensor(0x85, 0x90);
-            OV7690_write_cmos_sensor(0x86, 0x00);
-            OV7690_write_cmos_sensor(0x87, 0x5);
-            OV7690_write_cmos_sensor(0x88, 0x2);
-            OV7690_write_cmos_sensor(0x89, 0x41);
-            OV7690_write_cmos_sensor(0x8a, 0x36);
-            OV7690_write_cmos_sensor(0x8b, 0x33);
+  OV7690LSCSetting();
   
   /* Color Matrix */
-            OV7690_write_cmos_sensor(0xBB, 0x7A);
-            OV7690_write_cmos_sensor(0xBC, 0x69);
-            OV7690_write_cmos_sensor(0xBD, 0x11);
-            OV7690_write_cmos_sensor(0xBE, 0x13);
-            OV7690_write_cmos_sensor(0xBF, 0x81);
-            OV7690_write_cmos_sensor(0xC0, 0x96);
-            OV7690_write_cmos_sensor(0xC1, 0x1E);
-  
+#if 0
+  OV7690_write_cmos_sensor(0xbb, 0x80);			/*(ac-->80)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbc, 0x62);			/*(ae-->62)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbd, 0x1e);			/*(02-->1e)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbe, 0x26);			/*(1f-->26)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbf, 0x7b);			/*(93-->7b)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xc0, 0xac);			/*(b1-->ac)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xc1, 0x1e);			/*(1A-->1e)modify by KeJun 20110914*/
+#else
+  OV7690_write_cmos_sensor(0xbb, 0x80);			/*(ac-->80)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbc, 0x62);			/*(ae-->62)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbd, 0x1e);			/*(02-->1e)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbe, 0x09);			/*(1f-->26)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xbf, 0x7b);			/*(93-->7b)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xc0, 0x98);			/*(b1-->ac)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xc1, 0x1e);			/*(1A-->1e)modify by KeJun 20110914*/
+
+#endif  
   /* Edge + Denoise */
-            OV7690_write_cmos_sensor(0xb4, 0x20);
-            OV7690_write_cmos_sensor(0xB6, 0x08);
-            OV7690_write_cmos_sensor(0xb5, 0x05);
-  OV7690_write_cmos_sensor(0xb8, 0x06);
-            OV7690_write_cmos_sensor(0xb9, 0x02);
-            OV7690_write_cmos_sensor(0xba, 0x08);
-  
-  /* AEC/AGC target */
+  OV7690_write_cmos_sensor(0xb4, 0x06);																	
+  OV7690_write_cmos_sensor(0xb7, 0x02);			/*(07-->02)modify by KeJun 20110914*/														
+  OV7690_write_cmos_sensor(0xb8, 0x04);			/*(06-->0b)modify by KeJun 20110914*/														
+  OV7690_write_cmos_sensor(0xb9, 0x00);			/*(00-->00)modify by KeJun 20110914*/														
+  OV7690_write_cmos_sensor(0xba, 0x04);			/*(40-->18)modify by KeJun 20110914*/														
+                                                        
+  /* AEC/AGC target */                                  
   /*This only in fixed frame change!*/
-            OV7690_write_cmos_sensor(0x24, 0x88);
-            OV7690_write_cmos_sensor(0x25, 0x78);
-  OV7690_write_cmos_sensor(0x26, 0xb4);
+  OV7690_write_cmos_sensor(0x24, 0x78);			/*(58-->88)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x25, 0x68);			/*(48-->78)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x26, 0xb4);			/*(92-->c4)modify by KeJun 20110914*/
   
   /* UV adjust */
-      OV7690_write_cmos_sensor(0x81, 0xff);
-      OV7690_write_cmos_sensor(0x5A, 0x14);
-      OV7690_write_cmos_sensor(0x5B, 0xa2);
-      OV7690_write_cmos_sensor(0x5C, 0x70);
-      OV7690_write_cmos_sensor(0x5d, 0x20);
+  OV7690_write_cmos_sensor(0x5A, 0x14);			/*(74-->4A)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x5B, 0xa2);			/*(9f-->9F)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x5C, 0x70);			/*(42-->48)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x5d, 0x20);			/*(42-->32)modify by KeJun 20110914*/
   
-      OV7690_write_cmos_sensor(0x81, 0xff);//21
-      OV7690_write_cmos_sensor(0xd5, 0x20);
-      OV7690_write_cmos_sensor(0xd4, 0x20);
-      OV7690_write_cmos_sensor(0xd3, 0x00);
-      OV7690_write_cmos_sensor(0xdc, 0x00);
-      OV7690_write_cmos_sensor(0xD2, 0x04);
-      OV7690_write_cmos_sensor(0xD8, 0x55);
-      OV7690_write_cmos_sensor(0xD9, 0x55);
   /* Gamma */
-  OV7690_write_cmos_sensor(0xa3, 0x05);
-  OV7690_write_cmos_sensor(0xa4, 0x10);
-  OV7690_write_cmos_sensor(0xa5, 0x25);
-  OV7690_write_cmos_sensor(0xa6, 0x4f);
-  OV7690_write_cmos_sensor(0xa7, 0x5f);
-  OV7690_write_cmos_sensor(0xa8, 0x6c);
-  OV7690_write_cmos_sensor(0xa9, 0x78);
-  OV7690_write_cmos_sensor(0xaa, 0x82);
-  OV7690_write_cmos_sensor(0xab, 0x8b);
-  OV7690_write_cmos_sensor(0xac, 0x92);
-  OV7690_write_cmos_sensor(0xad, 0x9f);
-  OV7690_write_cmos_sensor(0xae, 0xAc);
-  OV7690_write_cmos_sensor(0xaf, 0xC1);
-  OV7690_write_cmos_sensor(0xb0, 0xD5);
-  OV7690_write_cmos_sensor(0xb1, 0xE7);
-  OV7690_write_cmos_sensor(0xb2, 0x21);
+  OV7690_write_cmos_sensor(0xa3, 0x0b);			/*(05-->08)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa4, 0x15);			/*(10-->15)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa5, 0x2a);			/*(25-->24)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa6, 0x51);			/*(4f-->45)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa7, 0x63);			/*(5f-->55)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa8, 0x74);			/*(6c-->6a)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa9, 0x83);			/*(78-->78)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xaa, 0x91);			/*(82-->87)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xab, 0x9e);			/*(8b-->96)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xac, 0xaa);			/*(92-->a3)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xad, 0xbe);			/*(9f-->b4)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xae, 0xce);			/*(Ac-->c3)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xaf, 0xe5);			/*(C1-->d6)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xb0, 0xf3);			/*(D5-->e6)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xb1, 0xfb);			/*(E7-->f2)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xb2, 0x06);			/*(21-->12)modify by KeJun 20110914*/
   
   /* Advance AWB */
-      OV7690_write_cmos_sensor(0x8c, 0x52);
-  OV7690_write_cmos_sensor(0x8d, 0x11);
-  OV7690_write_cmos_sensor(0x8e, 0x12);
-  OV7690_write_cmos_sensor(0x8f, 0x19);
-  OV7690_write_cmos_sensor(0x90, 0x50);
-  OV7690_write_cmos_sensor(0x91, 0x20);
-      OV7690_write_cmos_sensor(0x92, 0xb1);
-      OV7690_write_cmos_sensor(0x93, 0x9a);
-      OV7690_write_cmos_sensor(0x94, 0x0c);
-      OV7690_write_cmos_sensor(0x95, 0x0c);
-  OV7690_write_cmos_sensor(0x96, 0xf0);
-  OV7690_write_cmos_sensor(0x97, 0x10);
-      OV7690_write_cmos_sensor(0x98, 0x61);
-      OV7690_write_cmos_sensor(0x99, 0x63);
-      OV7690_write_cmos_sensor(0x9a, 0x71);
-      OV7690_write_cmos_sensor(0x9b, 0x78);
-  OV7690_write_cmos_sensor(0x9c, 0xf0);
-  OV7690_write_cmos_sensor(0x9d, 0xf0);
-  OV7690_write_cmos_sensor(0x9e, 0xf0);
-  OV7690_write_cmos_sensor(0x9f, 0xff);
-      OV7690_write_cmos_sensor(0xa0, 0xa8);
-      OV7690_write_cmos_sensor(0xa1, 0xa8);
-      OV7690_write_cmos_sensor(0xa2, 0x0f);
-
-  /* test pattern */
-#if defined(__OV7690_TEST_PATTERN__)
-  OV7690_write_cmos_sensor(0x82, 0x0F);
+#if 1
+  OV7690_write_cmos_sensor(0x8c, 0x5d);			/*(5c-->5d)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8d, 0x11);			/*(11-->11)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8e, 0x12);			/*(92-->12)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8f, 0x11);			/*(19-->11)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x90, 0x50);			/*(50-->50)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x91, 0x22);			/*(00-->22)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x92, 0xd1);			/*(86-->d1)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x93, 0xa7);			/*(80-->a7)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x94, 0x23);			/*(13-->23)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x95, 0x3b);			/*(1b-->3b)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x96, 0xff);			/*(ff-->ff)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x97, 0x00);			/*(00-->00)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x98, 0x4a);			/*(3e-->4a)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x99, 0x46);			/*(31-->46)modify by KeJun 20110914*/     
+  OV7690_write_cmos_sensor(0x9a, 0x3d);			/*(4e-->3d)modify by KeJun 20110914*/
+  //(0x9b, 0x41)20081217 Here adjus4aAWb, when enter preview, AWb didn't work!
+  OV7690_write_cmos_sensor(0x9b, 0x3a);                 /*(46-->3a)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9c, 0xf0);                 /*(3d-->f0)modify by KeJun 20110914*/          
+  OV7690_write_cmos_sensor(0x9d, 0xf0);                 /*(f0-->f0)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9e, 0xf0);                 /*(f0-->f0)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9f, 0xff);                 /*(ff-->ff)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa0, 0x56);                 /*(6a-->56)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa1, 0x55);                 /*(65-->55)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa2, 0x13);                 /*(11-->13)modify by KeJun 20110914*/
+#else                        
+  OV7690_write_cmos_sensor(0x8c, 0x5d);			/*(5c-->5d)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8d, 0x11);			/*(11-->11)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8e, 0x12);			/*(92-->12)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x8f, 0x11);			/*(19-->11)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x90, 0x50);			/*(50-->50)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x91, 0x20);			/*(00-->22)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x92, 0xd1);			/*(86-->d1)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x93, 0xa7);			/*(80-->a7)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x94, 0x23);			/*(13-->23)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x95, 0x3b);			/*(1b-->3b)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x96, 0xff);			/*(ff-->ff)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x97, 0x00);			/*(00-->00)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x98, 0x4a);			/*(3e-->4a)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x99, 0x46);			/*(31-->46)modify by KeJun 20110914*/     
+  OV7690_write_cmos_sensor(0x9a, 0x3d);			/*(4e-->3d)modify by KeJun 20110914*/
+  //(0x9b, 0x41)20081217 Here adjus4aAWb, when enter preview, AWb didn't work!
+  OV7690_write_cmos_sensor(0x9b, 0x3a);                 /*(46-->3a)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9c, 0xf0);                 /*(3d-->f0)modify by KeJun 20110914*/          
+  OV7690_write_cmos_sensor(0x9d, 0xf0);                 /*(f0-->f0)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9e, 0xf0);                 /*(f0-->f0)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0x9f, 0xff);                 /*(ff-->ff)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa0, 0x70);                 /*(6a-->56)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa1, 0x60);                 /*(65-->55)modify by KeJun 20110914*/
+  OV7690_write_cmos_sensor(0xa2, 0x13);                 /*(11-->13)modify by KeJun 20110914*/
 #endif
-}
-
-/*************************************************************************
-* FUNCTION
-*	OV7690Open
-*
-* DESCRIPTION
-*	This function initialize the registers of CMOS sensor
-*
-* PARAMETERS
-*	None
-*
-* RETURNS
-*	None
-*
-* GLOBALS AFFECTED
-*
-*************************************************************************/
+                                                        
+  /* test pattern */                                    
+#if defined(__OV7690_TEST_PATTERN__)                    
+  OV7690_write_cmos_sensor(0x82, 0x0F);                 
+#endif                                                  
+}                                                       
+                                                        
 kal_uint32 OV7690Open(void)
 
 {
@@ -805,9 +527,8 @@ kal_uint32 OV7690Open(void)
     SENSORDB("OV7690Open_startzhijie  sensor_id=%x \n",sensor_id);
 
 	if (sensor_id != OV7690_SENSOR_ID) {
-                sensor_id = 0xFFFFFFFF; 
-                SENSORDB("sensor_id error \n");
-        	  return ERROR_SENSOR_CONNECT_FAIL;
+        SENSORDB("sensor_id error \n");
+	    return ERROR_SENSOR_CONNECT_FAIL;
 	}
 	OV7690InitialSetting();
 	
@@ -826,45 +547,12 @@ kal_uint32 OV7690Open(void)
 	return ERROR_NONE;
 }   /* OV7690Open  */
 
-/*************************************************************************
-* FUNCTION
-*	OV7690Close
-*
-* DESCRIPTION
-*	This function is to turn off sensor module power.
-*
-* PARAMETERS
-*	None
-*
-* RETURNS
-*	None
-*
-* GLOBALS AFFECTED
-*
-*************************************************************************/
 kal_uint32 OV7690Close(void)
 {
 
 
 	return ERROR_NONE;
 }   /* OV7690Close */
-/*************************************************************************
-* FUNCTION
-* OV7690_Preview
-*
-* DESCRIPTION
-*	This function start the sensor preview.
-*
-* PARAMETERS
-*	*image_window : address pointer of pixel numbers in one period of HSYNC
-*  *sensor_config_data : address pointer of line numbers in one period of VSYNC
-*
-* RETURNS
-*	None
-*
-* GLOBALS AFFECTED
-*
-*************************************************************************/
 static kal_uint32 OV7690_Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
 					  MSDK_SENSOR_CONFIG_STRUCT *sensor_config_data)
 
@@ -872,15 +560,14 @@ static kal_uint32 OV7690_Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_windo
 	kal_uint16 DummyPixel = 0;
     SENSORDB("[IN] OV7690_Preview SensorImageMirror:%d\n",sensor_config_data->SensorImageMirror);
 
-	OV7690_FPS(30);
+	//OV7690_FPS(30);
 	OV7690SetMirror(sensor_config_data->SensorImageMirror);
-	OV7690SetClock(OV7690_PREVIEW_CLK);
-	OV7690SetDummy(DummyPixel, 0);
-	OV7690CalFps(); /* need cal new fps */
+	//OV7690SetClock(OV7690_PREVIEW_CLK);
+	//OV7690SetDummy(DummyPixel, 0);
+	//OV7690CalFps(); /* need cal new fps */
 	OV7690_write_cmos_sensor(0x14,0x21 );//for banding 50HZ
 	OV7690AeEnable(KAL_TRUE);
 	OV7690AwbEnable(KAL_TRUE);
-        OV7690_write_cmos_sensor(0x13,0xf7 );
 
 
 	image_window->GrabStartX= OV7690_X_START;
@@ -893,21 +580,6 @@ static kal_uint32 OV7690_Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_windo
 
 }   /*  OV7690_Preview   */
 
-/*************************************************************************
-* FUNCTION
-*	OV7690_Capture
-*
-* DESCRIPTION
-*	This function setup the CMOS sensor in capture MY_OUTPUT mode
-*
-* PARAMETERS
-*
-* RETURNS
-*	None
-*
-* GLOBALS AFFECTED
-*
-*************************************************************************/
 static kal_uint32 OV7690_Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
 						  MSDK_SENSOR_CONFIG_STRUCT *sensor_config_data)
 
@@ -930,20 +602,16 @@ void OV7690_NightMode(kal_bool bEnable)
 	
     SENSORDB("[IN]OV7690_NightMode \n");
 	if(bEnable == KAL_FALSE)
-	    {
-            OV7690Sensor.Fps = OV7690_FPS(30);
-           
-            }
+	    //OV7690Sensor.Fps = OV7690_FPS(30);
+		OV7690_write_cmos_sensor(0x15,0x00); /* AWb B gain */
 	else if(bEnable == KAL_TRUE)
-            { 
-	    OV7690Sensor.Fps = OV7690_FPS(15);           
-            }
+		//OV7690Sensor.Fps = OV7690_FPS(15);
+		OV7690_write_cmos_sensor(0x15, 0xa4); /* AWb B gain */
 	else
 		printk("Wrong mode setting \n");
 
-	OV7690SetDummy(dummy, 0);
-  	OV7690CalFps(); /* need cal new fps */
-	 OV7690_write_cmos_sensor(0x15,0xa4);//94
+	//OV7690SetDummy(dummy, 0);
+  	//OV7690CalFps(); /* need cal new fps */
 }
 
 kal_uint32 OV7690GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution)
@@ -967,8 +635,7 @@ kal_uint32 OV7690GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,
 	pSensorInfo->SensorHsyncPolarity = SENSOR_CLOCK_POLARITY_LOW;
 	pSensorInfo->SensorVsyncPolarity = SENSOR_CLOCK_POLARITY_LOW;
 
-	 pSensorInfo->CaptureDelayFrame = 4; 
-  pSensorInfo->PreviewDelayFrame = 2;  
+	
 	pSensorInfo->SensorMasterClockSwitch = 0; 
       pSensorInfo->SensorDrivingCurrent = ISP_DRIVING_2MA;   		
 
@@ -1057,64 +724,47 @@ static BOOL OV7690_set_param_wb(UINT16 para)
      {0x60,0x58}, /* FLUORESCENT */
      {0x40,0xA0}, /* TUNGSTEN */
     };
-	if (OV7690Sensor.Wb == para)
-    {
-      return TRUE;
-    }
+//	if (OV7690Sensor.Wb == para)
+//    {
+//      return TRUE;
+//    }
     OV7690Sensor.Wb = para;
 
 	switch (para)
 	{
 		case AWB_MODE_AUTO:
+				printk("XXXXXXXXXXX AWB_MODE_AUTO: XXXXXXXXXXXXXX\n");
 			OV7690AwbEnable(KAL_TRUE);	
-			OV7690_write_cmos_sensor(0x8c,0x52);//52
-			break;
-		case AWB_MODE_INCANDESCENT: //office
-			i = 1;
-		OV7690AwbEnable(KAL_FALSE);
-			OV7690_write_cmos_sensor(0x01,0x56);
-			OV7690_write_cmos_sensor(0x02,0x58);
-			OV7690_write_cmos_sensor(0x03,0x40);
-			OV7690_write_cmos_sensor(0x8c,0x56);
-			break;
-		case AWB_MODE_TUNGSTEN: //home 
-			i = 0;
-		OV7690AwbEnable(KAL_FALSE);
-			OV7690_write_cmos_sensor(0x01,0x56);
-			OV7690_write_cmos_sensor(0x02,0x5c);
-			OV7690_write_cmos_sensor(0x03,0x40);			
-			OV7690_write_cmos_sensor(0x8c,0x56);
-			break;
-		case AWB_MODE_CLOUDY_DAYLIGHT: //cloudy
-			i = 2;			
-		OV7690AwbEnable(KAL_FALSE);
-			OV7690_write_cmos_sensor(0x01,0x88);
-			OV7690_write_cmos_sensor(0x02,0xa3);
-			OV7690_write_cmos_sensor(0x03,0x80);			
-			OV7690_write_cmos_sensor(0x8c,0x56);
-			break;
-		case AWB_MODE_FLUORESCENT: 
-			i = 4;
-		OV7690AwbEnable(KAL_FALSE);
-			OV7690_write_cmos_sensor(0x01,0x57);
-			OV7690_write_cmos_sensor(0x02,0x56);
-			OV7690_write_cmos_sensor(0x03,0x40);			
-			OV7690_write_cmos_sensor(0x8c,0x56);
 			break;
 		case AWB_MODE_DAYLIGHT: //sunny
+				printk("XXXXXXXXXXX AWB_MODE_DAYLIGHT: XXXXXXXXXXXXXX\n");
+			i = 1;
+			break;
+		case AWB_MODE_CLOUDY_DAYLIGHT: //cloudy
+				printk("XXXXXXXXXXX AWB_MODE_CLOUDY_DAYLIGHT: XXXXXXXXXXXXXX\n");
+			i = 0;
+			break;
+		case AWB_MODE_INCANDESCENT: //office 
+				printk("XXXXXXXXXXX AWB_MODE_INCANDESCENT: XXXXXXXXXXXXXX\n");
+			i = 2;			
+			break;
+		case AWB_MODE_TUNGSTEN: //home 
+				printk("XXXXXXXXXXX AWB_MODE_TUNGSTEN: XXXXXXXXXXXXXX\n");
+			i = 4;
+			break;
+		case AWB_MODE_FLUORESCENT: 
+				printk("XXXXXXXXXXX AWB_MODE_FLUORESCENT: XXXXXXXXXXXXXX\n");
 			i = 3;
-			OV7690AwbEnable(KAL_FALSE);
-			OV7690_write_cmos_sensor(0x01,0x50);
-			OV7690_write_cmos_sensor(0x02,0x52);
-			OV7690_write_cmos_sensor(0x03,0x40);			
-			OV7690_write_cmos_sensor(0x8c,0x56);
 			break; 
 		default:
+				printk("XXXXXXXXXXX default: XXXXXXXXXXXXXX\n");
 			return FALSE;
 	}
-	 //OV7690AwbEnable(KAL_FALSE);
-   //OV7690_write_cmos_sensor(0x02, AwbGain[i][0]); /* AWb R gain */
-   //OV7690_write_cmos_sensor(0x01, AwbGain[i][1]); /* AWb B gain */
+	if (para != AWB_MODE_AUTO) {
+	OV7690AwbEnable(KAL_FALSE);
+   OV7690_write_cmos_sensor(0x02, AwbGain[i][0]); /* AWb R gain */
+   OV7690_write_cmos_sensor(0x01, AwbGain[i][1]); /* AWb B gain */
+	}
 
 	return TRUE;
 } /* OV7690_set_param_wb */
@@ -1125,12 +775,12 @@ static BOOL OV7690_set_param_effect(UINT16 para)
 	
 	static const kal_uint8 Data[6][3]=
     {
-      {0x06,0x80,0x80}, /* NORMAL */
-      {0x1e,0x80,0x80}, //{0x26,0x80,0x80}, /* GRAYSCALE */
-      {0x1e,0x40,0xA0}, /* SEPIA */
-      {0x1e,0x60,0x60}, /* SEPIAGREEN */
-      {0x1e,0xA0,0x40}, /* SEPIABLUE */
-      {0x46,0x80,0x80}, /* COLORINV */
+      {0x00,0x80,0x80}, /* NORMAL */
+      {0x18,0x80,0x80}, /* GRAYSCALE */
+      {0x18,0x40,0xA0}, /* SEPIA */
+      {0x18,0x60,0x60}, /* SEPIAGREEN */
+      {0x18,0xA0,0x40}, /* SEPIABLUE */
+      {0x40,0x80,0x80}, /* COLORINV */
     };
     kal_uint8 i;
 	BOOL ret = TRUE;
@@ -1181,10 +831,16 @@ static BOOL OV7690_set_param_banding(UINT16 para)
 	switch (para)
 	{
 		case AE_FLICKER_MODE_50HZ:
-			OV7690_write_cmos_sensor(0x14, 0x21);
+		  OV7690_write_cmos_sensor(0x14, 0x21);
+            OV7690_write_cmos_sensor(0x50, 0xa7);
+			OV7690_write_cmos_sensor(0x21, 0x34);
+            OV7690_write_cmos_sensor(0x2c, 0x9a);
 			break;
 		case AE_FLICKER_MODE_60HZ:
 			OV7690_write_cmos_sensor(0x14, 0x20);
+            OV7690_write_cmos_sensor(0x51, 0x8b);
+            OV7690_write_cmos_sensor(0x21, 0x34);
+            OV7690_write_cmos_sensor(0x2c, 0x2c);
 			break;
 		default:
 			return FALSE;
@@ -1265,14 +921,14 @@ static kal_uint32 OV7690_YUVSensorSetting(FEATURE_ID iCmd, UINT16 iPara)
 			{
 
 			//SENSORDB("OV7690_NightMode = FALSE \n");
-			    OV7690_NightMode(TRUE); 
+			    OV7690_NightMode(FALSE); 
 			}
 			else if (iPara == SCENE_MODE_NIGHTSCENE)
 			{
 				//SENSORDB("OV7690_NightMode = TRUE \n");
 			    OV7690_NightMode(TRUE); 
 			}	    
-		break; 
+		    break; 
 		case FID_AWB_MODE:
 			OV7690_set_param_wb(iPara);
 		break;
@@ -1310,81 +966,55 @@ static kal_uint32 OV7690_YUVSetVideoMode(UINT16 u2FrameRate)
         printk("Wrong frame rate setting \n");
     }   
 
-	OV7690SetDummy(dummy, 0);
-  	OV7690CalFps(); /* need cal new fps */
+	//OV7690SetDummy(dummy, 0);
+  	//OV7690CalFps(); /* need cal new fps */
     
 	printk("\n OV7690_YUVSetVideoMode:u2FrameRate=%d\n\n",u2FrameRate);
     return TRUE;
 }
 
 
-/*************************************************************************
-* FUNCTION
-*    OV7690_get_size
-*
-* DESCRIPTION
-*    This function return the image width and height of image sensor.
-*
-* PARAMETERS
-*    *sensor_width: address pointer of horizontal effect pixels of image sensor
-*    *sensor_height: address pointer of vertical effect pixels of image sensor
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690_get_size(kal_uint16 *sensor_width, kal_uint16 *sensor_height)
 {
   *sensor_width = OV7690_IMAGE_SENSOR_WIDTH_DRV; /* must be 4:3 */
   *sensor_height = OV7690_IMAGE_SENSOR_HEIGHT_DRV;
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690_get_period
-*
-* DESCRIPTION
-*    This function return the image width and height of image sensor.
-*
-* PARAMETERS
-*    *pixel_number: address pointer of pixel numbers in one period of HSYNC
-*    *line_number: address pointer of line numbers in one period of VSYNC
-*
-* RETURNS
-*    None
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
 static void OV7690_get_period(kal_uint16 *pixel_number, kal_uint16 *line_number)
 {
   *pixel_number = OV7690_PERIOD_PIXEL_NUMS;
   *line_number = OV7690_PERIOD_LINE_NUMS;
 }
 
-/*************************************************************************
-* FUNCTION
-*    OV7690_feature_control
-*
-* DESCRIPTION
-*    This function control sensor mode
-*
-* PARAMETERS
-*    id: scenario id
-*    image_window: image grab window
-*    cfg_data: config data
-*
-* RETURNS
-*    error code
-*
-* LOCAL AFFECTED
-*
-*************************************************************************/
+void OV7690GetExifInfo(UINT32 exifAddr)
+{
+	SENSOR_EXIF_INFO_STRUCT* pExifInfo = (SENSOR_EXIF_INFO_STRUCT*)exifAddr;
+	pExifInfo->AEISOSpeed = AE_ISO_100;
+	pExifInfo->AWBMode = OV7690Sensor.Wb;
+	pExifInfo->CapExposureTime = 0;
+	pExifInfo->FlashLightTimeus = 0;
+	pExifInfo->RealISOValue = AE_ISO_100;
+}
+
+void OV7690GetAFMaxNumFocusAreas(UINT32 *pFeatureReturnPara32)
+{
+    *pFeatureReturnPara32 = 0;
+    SENSORDB(" OV7690GetAFMaxNumFocusAreas, *pFeatureReturnPara32 = %d\n",  *pFeatureReturnPara32);
+
+}
+
+void OV7690GetAFMaxNumMeteringAreas(UINT32 *pFeatureReturnPara32)
+{
+    *pFeatureReturnPara32 = 0;
+    SENSORDB(" OV7690GetAFMaxNumMeteringAreas,*pFeatureReturnPara32 = %d\n",  *pFeatureReturnPara32);
+
+}
+
 kal_uint32 OV7690FeatureControl(MSDK_SENSOR_FEATURE_ENUM id, kal_uint8 *para, kal_uint32 *len)
 {
 	UINT32 *pFeatureData32=(UINT32 *) para;
+	UINT32 *pFeatureReturnPara32=(UINT32 *) para;
+	
 	if((id!=3000)&&(id!=3004)&&(id!=3006)){
 	    //CAMERA_CONTROL_FLOW(id,id);
 	}
@@ -1453,6 +1083,18 @@ kal_uint32 OV7690FeatureControl(MSDK_SENSOR_FEATURE_ENUM id, kal_uint8 *para, ka
 			SENSORDB("[IN]SENSOR_FEATURE_SET_VIDEO_MODE \n");
 			OV7690_YUVSetVideoMode(*para);
 			break; 		
+		case SENSOR_FEATURE_GET_EXIF_INFO:
+			printk("XXXXXXXXXXXXXXXXXXXXXXXX SENSOR_FEATURE_GET_EXIF_INFO: XXXXXXXXXXXXXXXXXXX\n");
+			OV7690GetExifInfo(*pFeatureData32);
+		case SENSOR_FEATURE_GET_AF_MAX_NUM_FOCUS_AREAS:
+        		OV7690GetAFMaxNumFocusAreas(pFeatureReturnPara32);            
+        		*len=4;
+        		break;
+    		case SENSOR_FEATURE_GET_AE_MAX_NUM_METERING_AREAS:
+        		OV7690GetAFMaxNumMeteringAreas(pFeatureReturnPara32);            
+        		*len=4;
+        		break;
+    
 		default:
 			break;
 	}
