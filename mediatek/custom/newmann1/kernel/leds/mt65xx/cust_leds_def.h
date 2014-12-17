@@ -51,7 +51,7 @@ struct cust_mt65xx_led {
 };
 
 extern struct cust_mt65xx_led *get_cust_led_list(void);
-//added for newmann1
+
 #define FIXED_BUTTON_LEDS_BRIGHTNESS 0x9
 #define FIXED_R_LEDS_BRIGHTNESS 10  //max 31
 #define FIXED_G_LEDS_BRIGHTNESS 10  //max 31
