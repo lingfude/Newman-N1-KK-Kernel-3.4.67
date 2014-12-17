@@ -22,15 +22,17 @@
 #include "ov8825mipiraw_Camera_Sensor_para.h"
 #include "ov8825mipiraw_CameraCustomized.h"
 static DEFINE_SPINLOCK(ov8825mipiraw_drv_lock);
-#define OTP_FEATURE
-extern void OV8820PreviewSetting(void);
-extern void OV8820CaptureSetting(void);
-static void OV8820_Sensor_Init(void);
-
+static uint16_t used_otp = 0;
 
 #define OV8825_DEBUG
-unsigned char OV8820_flag=0; //nick
 //#define OV8825_DEBUG_SOFIA
+
+extern int update_lens();
+extern int update_awb_gain();
+extern int update_otp_lenc();
+extern int update_otp_wb();
+extern int get_sensor();
+
 
 #ifdef OV8825_DEBUG
 	#define OV8825DB(fmt, arg...) printk( "[OV8825Raw] "  fmt, ##arg)
@@ -64,18 +66,12 @@ extern int iWriteReg(u16 a_u2Addr , u32 a_u4Data , u32 a_u4Bytes , u16 i2cId);
 
 #define OV8825_write_cmos_sensor(addr, para) iWriteReg((u16) addr , (u32) para , 1, OV8825MIPI_WRITE_ID)
 
-#define OV8820_write_cmos_sensor(addr, para) iWriteReg((u16) addr , (u32) para , 1, OV8825MIPI_WRITE_ID)  //nick
-
-
 kal_uint16 OV8825_read_cmos_sensor(kal_uint32 addr)
 {
 kal_uint16 get_byte=0;
     iReadReg((u16) addr ,(u8*)&get_byte,OV8825MIPI_WRITE_ID);
     return get_byte;
 }
-// R/G and B/G of current camera module
-unsigned char rg_ratio = 0;
-unsigned char bg_ratio = 0;
 
 #define Sleep(ms) mdelay(ms)
 
@@ -102,7 +98,7 @@ void OV8825_write_shutter(kal_uint32 shutter)
 			max_shutter = OV8825_FULL_PERIOD_LINE_NUMS + ov8825.DummyLines ; 
 		}
 
-		#if defined(MT6575) ||  defined(MT6577)
+		#if defined(MT6575)||defined(MT6577)
 		switch(OV8825CurrentScenarioId)
 		{
         	case MSDK_SCENARIO_ID_CAMERA_ZSD:
@@ -145,7 +141,7 @@ void OV8825_write_shutter(kal_uint32 shutter)
 		if (frame_length < min_framelength)
 		{
 			//shutter = min_framelength - 4;
-			#if defined(MT6575) ||  defined(MT6577)
+			#if defined(MT6575)||defined(MT6577)
 			switch(OV8825CurrentScenarioId)
 			{
         	case MSDK_SCENARIO_ID_CAMERA_ZSD:
@@ -717,12 +713,6 @@ static void OV8825_SetDummy( const kal_uint32 iPixels, const kal_uint32 iLines )
 
 void OV8825PreviewSetting(void)
 {	
-if (OV8820_flag == 1)
-{
-  OV8820PreviewSetting();
-}
-else
-{
     OV8825DB("OV8825PreviewSetting enter :\n ");
 	
 	//;//OV8830_1632*1224_setting_2lanes_520Mbps/lane_72.22MSCLK30fps
@@ -823,19 +813,12 @@ else
 	OV8825_write_cmos_sensor(0x6900,0x61);//CADC CTRL00  
 	OV8825_write_cmos_sensor(0x3602,0xc2);////////////////////add by tony
 	OV8825_write_cmos_sensor(0x0100,0x01);// wake up
-	mDELAY(25);
+	mDELAY(10);
 	
     OV8825DB("OV8825PreviewSetting exit :\n ");
 }
-}
 
 void OV8825CaptureSetting(void)
-{	
-if (OV8820_flag == 1)
-{
-OV8820CaptureSetting();
-}
-else
 {	
     OV8825DB("OV8825CaptureSetting enter :\n ");
 	//;//OV8830_3264*2448_setting_2lanes_710.66Mbps/72.22M SCLKlane_15fps
@@ -945,18 +928,11 @@ else
 	OV8825_write_cmos_sensor(0x3602, 0x42);////////////////////add by tony
 	OV8825_write_cmos_sensor(0x0100, 0x01);//, 0xwake, 0xup
 	
-	mDELAY(25);
+	mDELAY(20);
 	OV8825DB("OV8825CaptureSetting exit :\n ");
-}
 }
 
 static void OV8825_Sensor_Init(void)
-{
-if (OV8820_flag == 1)
-{
-	OV8820_Sensor_Init();	
-}
-else
 {
 	OV8825DB("OV8825_Sensor_Init enter :\n ");	
 	
@@ -991,6 +967,7 @@ else
 	OV8825_write_cmos_sensor(0x3619, 0x00); //VCM position = 0
 	OV8825_write_cmos_sensor(0x361a, 0xB0); //VCM clock divider, VCM clock = 24000000/0x4b0 = 20000
 	OV8825_write_cmos_sensor(0x361b, 0x04); //VCM clock divider
+	OV8825_write_cmos_sensor(0x361c, 0x07); //VCM clock divider	
 	OV8825_write_cmos_sensor(0x3701, 0x44); //sensor control
 	OV8825_write_cmos_sensor(0x370b, 0x01); //sensor control
 	OV8825_write_cmos_sensor(0x370c, 0x50); //sensor control
@@ -1001,7 +978,7 @@ else
 	OV8825_write_cmos_sensor(0x3819, 0x40); //Hsync end L
 	OV8825_write_cmos_sensor(0x3b1f, 0x00); //Frex conrol
 	//; clear OTP data buffer
-	OV8825_write_cmos_sensor(0x3d00, 0x00);
+	/*OV8825_write_cmos_sensor(0x3d00, 0x00);
 	OV8825_write_cmos_sensor(0x3d01, 0x00);
 	OV8825_write_cmos_sensor(0x3d02, 0x00);
 	OV8825_write_cmos_sensor(0x3d03, 0x00);
@@ -1037,7 +1014,7 @@ else
 	OV8825_write_cmos_sensor(0x3d81, 0x00);
 	OV8825_write_cmos_sensor(0x3d84, 0x00);
 	OV8825_write_cmos_sensor(0x3f06, 0x00);
-	OV8825_write_cmos_sensor(0x3f07, 0x00);
+	OV8825_write_cmos_sensor(0x3f07, 0x00);*/
 	//; BLC
 	OV8825_write_cmos_sensor(0x4000, 0x29);
 	OV8825_write_cmos_sensor(0x4001, 0x02);// BLC start line
@@ -1179,11 +1156,12 @@ else
 	OV8825_write_cmos_sensor(0x5001, 0x01);//	; MWB on
 	OV8825_write_cmos_sensor(0x5000, 0x06);//	; LENC off, BPC on, WPC on
 
-    OV8825_write_cmos_sensor(0x3608, 0x40);////////////close internel dvdd	
-    OV8825DB("OV8825_Sensor_Init exit :\n ");
+	//OV8825_write_cmos_sensor(0x3608, 0x40);////////////close internel dvdd
+	update_lens();
+	update_awb_gain();
+	mDELAY(50);
+	OV8825DB("OV8825_Sensor_Init exit :\n ");
 	
-	printk("Ghong_zguoqing_read the 0x5000 in init over 2,the value is %x\n",OV8825_read_cmos_sensor(0x5000));
-}
 }   /*  OV8825_Sensor_Init  */
 
 /*************************************************************************
@@ -1211,37 +1189,50 @@ UINT32 OV8825Open(void)
 	
 	OV8825DB("OV8825Open enter :\n ");
 	OV8825_write_cmos_sensor(0x0103,0x01);// Reset sensor
-    mDELAY(2);
+	mDELAY(2);
 
+	OV8825_write_cmos_sensor(0x0100,0x01);// wake up
+	mDELAY(50);
+
+	if(0 == used_otp){
+	    OV8825DB("befor otp............................................\n");
+	    OV8825DB("befor otp............................................\n");
+	    OV8825DB("befor otp............................................\n");
+	    update_otp_lenc();
+	    update_otp_wb();
+		
+	    used_otp =1;
+	    OV8825DB("after otp............................................\n");
+	    OV8825DB("after otp............................................\n");
+	    OV8825DB("after otp............................................\n");
+    }   
+
+  
 	//  Read sensor ID to adjust I2C is OK?
 	for(i=0;i<3;i++)
 	{
 		sensor_id = (OV8825_read_cmos_sensor(0x300A)<<8)|OV8825_read_cmos_sensor(0x300B);
 		OV8825DB("OOV8825 READ ID :%x",sensor_id);
-		if((sensor_id != OV8825_SENSOR_ID)&&(sensor_id != 0x8820))
+		if(sensor_id != OV8825_SENSOR_ID)
 		{
 			return ERROR_SENSOR_CONNECT_FAIL;
 		}else
 			break;
 	}
-if(sensor_id == 0x8820)
-{
-	OV8820_flag = 1;
-}
 	spin_lock(&ov8825mipiraw_drv_lock);
 	ov8825.sensorMode = SENSOR_MODE_INIT;
 	ov8825.OV8825AutoFlickerMode = KAL_FALSE;
 	ov8825.OV8825VideoMode = KAL_FALSE;
 	spin_unlock(&ov8825mipiraw_drv_lock);
 	OV8825_Sensor_Init();
-
+	
 	spin_lock(&ov8825mipiraw_drv_lock);
 	ov8825.DummyLines= 0;
 	ov8825.DummyPixels= 0;
 	
 	ov8825.pvPclk =  (13867);
 	spin_unlock(&ov8825mipiraw_drv_lock);
-	#if defined(MT6575) ||  defined(MT6577)
+	#if defined(MT6575)||defined(MT6577)
     	switch(OV8825CurrentScenarioId)
 		{
 			case MSDK_SCENARIO_ID_CAMERA_ZSD:				
@@ -1260,7 +1251,7 @@ if(sensor_id == 0x8820)
 				ov8825.capPclk = (13867);
 				spin_unlock(&ov8825mipiraw_drv_lock);
 				break;  
-        }
+          }
 	#else
 		spin_lock(&ov8825mipiraw_drv_lock);
 		ov8825.capPclk = (13867);
@@ -1299,6 +1290,7 @@ if(sensor_id == 0x8820)
 * GLOBALS AFFECTED
 *
 *************************************************************************/
+volatile int  camera_sensor_type=0;
 UINT32 OV8825GetSensorID(UINT32 *sensorID) 
 {
     int  retry = 1; 
@@ -1319,14 +1311,18 @@ UINT32 OV8825GetSensorID(UINT32 *sensorID)
         retry--; 
     } while (retry > 0);
 
-    if ((*sensorID != OV8825_SENSOR_ID)&&(*sensorID != 0x8820)) {
+    if (*sensorID != OV8825_SENSOR_ID) {
         *sensorID = 0xFFFFFFFF; 
         return ERROR_SENSOR_CONNECT_FAIL;
     }
-   if(*sensorID == 0x8820)
-{
-OV8820_flag = 1;
-}
+
+    OV8825_write_cmos_sensor(0x0100,0x01);// wake up
+    mDELAY(50);
+
+    update_otp_lenc();
+    update_otp_wb();
+    camera_sensor_type=get_sensor();
+
     return ERROR_NONE;
 }
 
@@ -1455,21 +1451,19 @@ void OV8825SetFlipMirror(kal_int32 imgMirror)
 	flip  = OV8825_read_cmos_sensor(0x3821);
     switch (imgMirror)
     {
-        case IMAGE_H_MIRROR://IMAGE_NORMAL: 
+        case IMAGE_V_MIRROR://IMAGE_NORMAL: //IMAGE_H_MIRROR--mingji
             OV8825_write_cmos_sensor(0x3820, (mirror & (0xF9)));//Set normal
             OV8825_write_cmos_sensor(0x3821, (flip & (0xF9)));	//Set normal
             break;
-//        case IMAGE_NORMAL://IMAGE_V_MIRROR: 
-		case IMAGE_HV_MIRROR:
+        case IMAGE_HV_MIRROR://IMAGE_V_MIRROR: //IMAGE_NORMAL mingji
             OV8825_write_cmos_sensor(0x3820, (mirror & (0xF9)));//Set flip
             OV8825_write_cmos_sensor(0x3821, (flip | (0x06)));	//Set flip
             break;
-//        case IMAGE_HV_MIRROR://IMAGE_H_MIRROR: 
-		case IMAGE_NORMAL:
+        case IMAGE_NORMAL://IMAGE_H_MIRROR: //IMAGE_HV_MIRROR mingji
             OV8825_write_cmos_sensor(0x3820, (mirror |(0x06)));	//Set mirror
             OV8825_write_cmos_sensor(0x3821, (flip & (0xF9)));	//Set mirror
             break;
-        case IMAGE_V_MIRROR://IMAGE_HV_MIRROR: 
+        case IMAGE_H_MIRROR://IMAGE_HV_MIRROR: //IMAGE_V_MIRROR mingji
             OV8825_write_cmos_sensor(0x3820, (mirror |(0x06)));	//Set mirror & flip
             OV8825_write_cmos_sensor(0x3821, (flip |(0x06)));	//Set mirror & flip
             break;
@@ -1522,7 +1516,7 @@ UINT32 OV8825Preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
 	//write_OV8825_gain(ov8825.pvGain);
 	
 	//set mirror & flip
-	OV8825DB("[OV8825Preview] mirror&flip: %d \n",sensor_config_data->SensorImageMirror);
+	//OV8825DB("[OV8825Preview] mirror&flip: %d \n",sensor_config_data->SensorImageMirror);
 	spin_lock(&ov8825mipiraw_drv_lock);
 	ov8825.imgMirror = sensor_config_data->SensorImageMirror;
 	spin_unlock(&ov8825mipiraw_drv_lock);
@@ -1566,7 +1560,7 @@ UINT32 OV8825Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
 	//set mirror & flip
 	ov8825.imgMirror = sensor_config_data->SensorImageMirror;
 	spin_unlock(&ov8825mipiraw_drv_lock);
-	OV8825DB("[OV8825Capture] mirror&flip: %d\n",sensor_config_data->SensorImageMirror);
+	//OV8825DB("[OV8825Capture] mirror&flip: %d\n",sensor_config_data->SensorImageMirror);
 	OV8825SetFlipMirror(sensor_config_data->SensorImageMirror);
 
 	
@@ -1576,7 +1570,7 @@ UINT32 OV8825Capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *image_window,
 	//OV8825_SetDummy( ov8825.DummyPixels, ov8825.DummyLines);
 	
 	// Full size setting
-	#if defined(MT6575) ||  defined(MT6577)
+	#if defined(MT6575)||defined(MT6577)
     if(OV8825CurrentScenarioId==MSDK_SCENARIO_ID_CAMERA_ZSD)
     {
 		OV8825DB("OV8825Capture exit ZSD!!\n");
@@ -1615,7 +1609,7 @@ UINT32 OV8825GetResolution(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution
 
     OV8825DB("OV8825GetResolution!!\n");
 
-	#if defined(MT6575) ||  defined(MT6577)
+	#if 0 //defined(MT6575)||defined(MT6577)
 		switch(OV8825CurrentScenarioId)
 		{
         	case MSDK_SCENARIO_ID_CAMERA_ZSD:
@@ -1646,7 +1640,7 @@ UINT32 OV8825GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,
                                                 MSDK_SENSOR_INFO_STRUCT *pSensorInfo,
                                                 MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData)
 {	
-	#if defined(MT6575) ||  defined(MT6577)
+	#if defined(MT6575)||defined(MT6577)
 		switch(OV8825CurrentScenarioId)
 		{
         	case MSDK_SCENARIO_ID_CAMERA_ZSD:
@@ -1707,16 +1701,14 @@ UINT32 OV8825GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,
     pSensorInfo->SensorISOBinningInfo.ISOBinningInfo[ISO_1600_MODE].BinningEnable=TRUE;
 
     pSensorInfo->CaptureDelayFrame = 1; 
-    pSensorInfo->PreviewDelayFrame = 4;//zhaoshaopeng change from 1 
+    pSensorInfo->PreviewDelayFrame = 1; 
     pSensorInfo->VideoDelayFrame = 2; 
 
     pSensorInfo->SensorDrivingCurrent = ISP_DRIVING_8MA;      
     pSensorInfo->AEShutDelayFrame = 0;//0;		    /* The frame of setting shutter default 0 for TG int */
     pSensorInfo->AESensorGainDelayFrame = 0 ;//0;     /* The frame of setting sensor gain */
-    pSensorInfo->AEISPGainDelayFrame = 1;	
-	   	//fenggy add from mtk
-	pSensorInfo->SensorRawType = RAW_TYPE_10BIT;
-	//fenggy end
+    pSensorInfo->AEISPGainDelayFrame = 2;	
+	   
     switch (ScenarioId)
     {
         case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
@@ -1736,7 +1728,7 @@ UINT32 OV8825GetInfo(MSDK_SCENARIO_ID_ENUM ScenarioId,
             break;
         case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
         case MSDK_SCENARIO_ID_CAMERA_CAPTURE_MEM:
-		#if defined(MT6575) ||  defined(MT6577)
+		#if defined(MT6575)||defined(MT6577)
 			case MSDK_SCENARIO_ID_CAMERA_ZSD:
 		#endif
             pSensorInfo->SensorClockFreq=26;
@@ -1789,7 +1781,7 @@ UINT32 OV8825Control(MSDK_SCENARIO_ID_ENUM ScenarioId, MSDK_SENSOR_EXPOSURE_WIND
             break;
         case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
         case MSDK_SCENARIO_ID_CAMERA_CAPTURE_MEM:
-		#if defined(MT6575) ||  defined(MT6577)
+		#if defined(MT6575)||defined(MT6577)
 			case MSDK_SCENARIO_ID_CAMERA_ZSD:
 		#endif
             OV8825Capture(pImageWindow, pSensorConfigData);
@@ -1840,6 +1832,8 @@ UINT32 OV8825SetVideoMode(UINT16 u2FrameRate)
 		extralines = MAX_Frame_length - OV8825_PV_PERIOD_LINE_NUMS;
 	
 		OV8825_SetDummy(ov8825.DummyPixels,extralines);
+		
+		//msleep(1000);
     }
 	else if(ov8825.sensorMode == SENSOR_MODE_CAPTURE)
 	{
@@ -1924,7 +1918,7 @@ UINT32 OV8825FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,
             *pFeatureParaLen=4;
             break;
         case SENSOR_FEATURE_GET_PERIOD:
-				#if defined(MT6575) ||  defined(MT6577)
+				#if defined(MT6575)||defined(MT6577)
         			switch(OV8825CurrentScenarioId)
         			{
         				//OV8825DB("OV8825FeatureControl:OV8825CurrentScenarioId:%d\n",OV8825CurrentScenarioId);
@@ -1952,7 +1946,7 @@ UINT32 OV8825FeatureControl(MSDK_SENSOR_FEATURE_ENUM FeatureId,
 			
           	break;
         case SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ:
-			#if defined(MT6575) ||  defined(MT6577)
+			#if defined(MT6575)||defined(MT6577)
         			switch(OV8825CurrentScenarioId)
         			{
         			//OV8825DB("OV8825FeatureControl:OV8825CurrentScenarioId:%d\n",OV8825CurrentScenarioId);
@@ -2137,296 +2131,3 @@ UINT32 OV8825_MIPI_RAW_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc)
     return ERROR_NONE;
 }   /* SensorInit() */
 
-
-static void OV8820_Sensor_Init(void)
-{
-	OV8825DB("OV8820_Sensor_Init enter :\n ");		
-	OV8820_write_cmos_sensor(0x0103,0x01 );//software reset
-	Sleep(5);//; delay(5ms)
-OV8820_write_cmos_sensor(0x3000,0x16);
-OV8820_write_cmos_sensor(0x3001,0x00);
-OV8820_write_cmos_sensor(0x3002,0x6c);
-OV8820_write_cmos_sensor(0x3003,0xce);
-OV8820_write_cmos_sensor(0x3007,0x3b);
-OV8820_write_cmos_sensor(0x300d,0x00);
-OV8820_write_cmos_sensor(0x301f,0x09);
-OV8820_write_cmos_sensor(0x3010,0x00);
-OV8820_write_cmos_sensor(0x3012,0x80);
-OV8820_write_cmos_sensor(0x3013,0x39);
-OV8820_write_cmos_sensor(0x3018,0x00);
-OV8820_write_cmos_sensor(0x3104,0x20);
-OV8820_write_cmos_sensor(0x3300,0x00);
-OV8820_write_cmos_sensor(0x3500,0x00);
-OV8820_write_cmos_sensor(0x3503,0x07);
-OV8820_write_cmos_sensor(0x3509,0x00);
-OV8820_write_cmos_sensor(0x3603,0x5c);
-OV8820_write_cmos_sensor(0x3604,0x98);
-OV8820_write_cmos_sensor(0x3605,0xe9);
-OV8820_write_cmos_sensor(0x3609,0xb8);
-OV8820_write_cmos_sensor(0x360a,0xbc);
-OV8820_write_cmos_sensor(0x360b,0xb4);
-OV8820_write_cmos_sensor(0x360c,0x0d);
-OV8820_write_cmos_sensor(0x3612,0x00);
-OV8820_write_cmos_sensor(0x3613,0x02);
-OV8820_write_cmos_sensor(0x3614,0x0f);
-OV8820_write_cmos_sensor(0x3615,0x00);
-OV8820_write_cmos_sensor(0x3616,0x03);
-OV8820_write_cmos_sensor(0x3617,0xa1);
-OV8820_write_cmos_sensor(0x3618,0x00);
-OV8820_write_cmos_sensor(0x3619,0x00);
-OV8820_write_cmos_sensor(0x361a,0xB0);
-OV8820_write_cmos_sensor(0x361b,0x04);
-OV8820_write_cmos_sensor(0x3700,0x20);
-OV8820_write_cmos_sensor(0x3701,0x44);
-OV8820_write_cmos_sensor(0x3707,0x63);
-OV8820_write_cmos_sensor(0x3709,0x40);
-OV8820_write_cmos_sensor(0x370b,0x01);
-OV8820_write_cmos_sensor(0x370c,0x50);
-OV8820_write_cmos_sensor(0x370d,0x0c);
-OV8820_write_cmos_sensor(0x3711,0x01);
-OV8820_write_cmos_sensor(0x3816,0x02);
-OV8820_write_cmos_sensor(0x3817,0x40);
-OV8820_write_cmos_sensor(0x3818,0x00);
-OV8820_write_cmos_sensor(0x3819,0x40);
-OV8820_write_cmos_sensor(0x3b1f,0x00);
-OV8820_write_cmos_sensor(0x3d00,0x00);
-OV8820_write_cmos_sensor(0x3d01,0x00);
-OV8820_write_cmos_sensor(0x3d02,0x00);
-OV8820_write_cmos_sensor(0x3d03,0x00);
-OV8820_write_cmos_sensor(0x3d04,0x00);
-OV8820_write_cmos_sensor(0x3d05,0x00);
-OV8820_write_cmos_sensor(0x3d06,0x00);
-OV8820_write_cmos_sensor(0x3d07,0x00);
-OV8820_write_cmos_sensor(0x3d08,0x00);
-OV8820_write_cmos_sensor(0x3d09,0x00);
-OV8820_write_cmos_sensor(0x3d0a,0x00);
-OV8820_write_cmos_sensor(0x3d0b,0x00);
-OV8820_write_cmos_sensor(0x3d0c,0x00);
-OV8820_write_cmos_sensor(0x3d0d,0x00);
-OV8820_write_cmos_sensor(0x3d0e,0x00);
-OV8820_write_cmos_sensor(0x3d0f,0x00);
-OV8820_write_cmos_sensor(0x3d10,0x00);
-OV8820_write_cmos_sensor(0x3d11,0x00);
-OV8820_write_cmos_sensor(0x3d12,0x00);
-OV8820_write_cmos_sensor(0x3d13,0x00);
-OV8820_write_cmos_sensor(0x3d14,0x00);
-OV8820_write_cmos_sensor(0x3d15,0x00);
-OV8820_write_cmos_sensor(0x3d16,0x00);
-OV8820_write_cmos_sensor(0x3d17,0x00);
-OV8820_write_cmos_sensor(0x3d18,0x00);
-OV8820_write_cmos_sensor(0x3d19,0x00);
-OV8820_write_cmos_sensor(0x3d1a,0x00);
-OV8820_write_cmos_sensor(0x3d1b,0x00);
-OV8820_write_cmos_sensor(0x3d1c,0x00);
-OV8820_write_cmos_sensor(0x3d1d,0x00);
-OV8820_write_cmos_sensor(0x3d1e,0x00);
-OV8820_write_cmos_sensor(0x3d1f,0x00);
-OV8820_write_cmos_sensor(0x3d80,0x00);
-OV8820_write_cmos_sensor(0x3d81,0x00);
-OV8820_write_cmos_sensor(0x3d84,0x00);
-OV8820_write_cmos_sensor(0x3f01,0xfc);
-OV8820_write_cmos_sensor(0x3f06,0x00);
-OV8820_write_cmos_sensor(0x3f07,0x00);
-OV8820_write_cmos_sensor(0x4000,0x29);
-OV8820_write_cmos_sensor(0x4001,0x02);
-OV8820_write_cmos_sensor(0x4002,0x45);
-OV8820_write_cmos_sensor(0x4003,0x08);
-OV8820_write_cmos_sensor(0x4004,0x04);
-OV8820_write_cmos_sensor(0x4005,0x18);
-OV8820_write_cmos_sensor(0x4300,0xff);
-OV8820_write_cmos_sensor(0x4303,0x00);
-OV8820_write_cmos_sensor(0x4304,0x08);
-OV8820_write_cmos_sensor(0x4307,0x00);
-OV8820_write_cmos_sensor(0x4800,0x04);
-OV8820_write_cmos_sensor(0x4801,0x0f);
-OV8820_write_cmos_sensor(0x4843,0x02);
-OV8820_write_cmos_sensor(0x5000,0x06);
-OV8820_write_cmos_sensor(0x5001,0x00);
-OV8820_write_cmos_sensor(0x5002,0x00);
-OV8820_write_cmos_sensor(0x501f,0x00);
-OV8820_write_cmos_sensor(0x5c05,0x00);
-OV8820_write_cmos_sensor(0x5c06,0x00);
-OV8820_write_cmos_sensor(0x5c07,0x80);
-OV8820_write_cmos_sensor(0x6700,0x05);
-OV8820_write_cmos_sensor(0x6701,0x19);
-OV8820_write_cmos_sensor(0x6702,0xfd);
-OV8820_write_cmos_sensor(0x6703,0xd7);
-OV8820_write_cmos_sensor(0x6704,0xff);
-OV8820_write_cmos_sensor(0x6705,0xff);
-OV8820_write_cmos_sensor(0x6800,0x10);
-OV8820_write_cmos_sensor(0x6801,0x02);
-OV8820_write_cmos_sensor(0x6802,0x90);
-OV8820_write_cmos_sensor(0x6803,0x10);
-OV8820_write_cmos_sensor(0x6804,0x59);
-OV8820_write_cmos_sensor(0x6901,0x04);
-OV8820_write_cmos_sensor(0x3003,0xce);
-OV8820_write_cmos_sensor(0x3004,0xd8);
-OV8820_write_cmos_sensor(0x3005,0x00);
-OV8820_write_cmos_sensor(0x3006,0x10);
-OV8820_write_cmos_sensor(0x3007,0x3b);
-OV8820_write_cmos_sensor(0x3012,0x80);
-OV8820_write_cmos_sensor(0x3013,0x39);
-OV8820_write_cmos_sensor(0x3104,0x20);
-OV8820_write_cmos_sensor(0x3503,0x07);
-OV8820_write_cmos_sensor(0x3500,0x00);
-OV8820_write_cmos_sensor(0x3501,0x27);
-OV8820_write_cmos_sensor(0x3502,0x00);
-OV8820_write_cmos_sensor(0x350b,0xff);
-OV8820_write_cmos_sensor(0x3400,0x04);
-OV8820_write_cmos_sensor(0x3401,0x00);
-OV8820_write_cmos_sensor(0x3402,0x04);
-OV8820_write_cmos_sensor(0x3403,0x00);
-OV8820_write_cmos_sensor(0x3404,0x04);
-OV8820_write_cmos_sensor(0x3405,0x00);
-OV8820_write_cmos_sensor(0x3406,0x01);
-OV8820_write_cmos_sensor(0x5001,0x01);
-OV8820_write_cmos_sensor(0x5000,0x06);
-    OV8825DB("OV8820_Sensor_Init exit :\n ");
-}
-
-
-void OV8820PreviewSetting(void)
-{	
-   OV8825DB("OV8820PreviewSetting enter :\n ");
-	OV8820_write_cmos_sensor(0x0100,0x00);
-OV8820_write_cmos_sensor(0x3600,0x05);
-OV8820_write_cmos_sensor(0x3601,0x32);
-OV8820_write_cmos_sensor(0x3602,0x44);
-OV8820_write_cmos_sensor(0x3702,0x70);
-OV8820_write_cmos_sensor(0x3703,0x4f);
-OV8820_write_cmos_sensor(0x3704,0x69);
-OV8820_write_cmos_sensor(0x3706,0x7b);
-OV8820_write_cmos_sensor(0x3708,0x85);
-OV8820_write_cmos_sensor(0x370a,0x12);
-OV8820_write_cmos_sensor(0x370e,0x08);
-OV8820_write_cmos_sensor(0x3712,0xcc);
-OV8820_write_cmos_sensor(0x3800,0x00);
-OV8820_write_cmos_sensor(0x3801,0x00);
-OV8820_write_cmos_sensor(0x3802,0x00);
-OV8820_write_cmos_sensor(0x3803,0x00);
-OV8820_write_cmos_sensor(0x3804,0x0c);
-OV8820_write_cmos_sensor(0x3805,0xdf);
-OV8820_write_cmos_sensor(0x3806,0x09);
-OV8820_write_cmos_sensor(0x3807,0x9b);
-OV8820_write_cmos_sensor(0x3808,0x06);
-OV8820_write_cmos_sensor(0x3809,0x60);
-OV8820_write_cmos_sensor(0x380a,0x04);
-OV8820_write_cmos_sensor(0x380b,0xc8);
-OV8820_write_cmos_sensor(0x380c,0x0d);
-OV8820_write_cmos_sensor(0x380d,0xbc);
-OV8820_write_cmos_sensor(0x380e,0x05);
-OV8820_write_cmos_sensor(0x380f,0x1e);
-OV8820_write_cmos_sensor(0x3810,0x00);
-OV8820_write_cmos_sensor(0x3811,0x08);
-OV8820_write_cmos_sensor(0x3812,0x00);
-OV8820_write_cmos_sensor(0x3813,0x04);
-OV8820_write_cmos_sensor(0x3814,0x31);
-OV8820_write_cmos_sensor(0x3815,0x31);
-OV8820_write_cmos_sensor(0x3820,0x80);
-OV8820_write_cmos_sensor(0x3821,0x17);
-OV8820_write_cmos_sensor(0x3f00,0x00);
-OV8820_write_cmos_sensor(0x3f05,0x10);
-OV8820_write_cmos_sensor(0x4600,0x04);
-OV8820_write_cmos_sensor(0x4601,0x00);
-OV8820_write_cmos_sensor(0x4602,0x78);
-OV8820_write_cmos_sensor(0x4837,0x18);
-OV8820_write_cmos_sensor(0x5068,0x00);
-OV8820_write_cmos_sensor(0x506a,0x00);
-OV8820_write_cmos_sensor(0x5780,0xfc);
-OV8820_write_cmos_sensor(0x5c00,0x80);
-OV8820_write_cmos_sensor(0x5c01,0x00);
-OV8820_write_cmos_sensor(0x5c02,0x00);
-OV8820_write_cmos_sensor(0x5c03,0x00);
-OV8820_write_cmos_sensor(0x5c04,0x00);
-OV8820_write_cmos_sensor(0x5c08,0x10);
-OV8820_write_cmos_sensor(0x6900,0x61);
-OV8820_write_cmos_sensor(0x4005,0x18);
-OV8820_write_cmos_sensor(0x404f,0x8f);
-OV8820_write_cmos_sensor(0x3003,0xce);
-OV8820_write_cmos_sensor(0x3004,0xe3);
-OV8820_write_cmos_sensor(0x3005,0x00);
-OV8820_write_cmos_sensor(0x3006,0x10);
-OV8820_write_cmos_sensor(0x3007,0x43);
-OV8820_write_cmos_sensor(0x3011,0x01);
-OV8820_write_cmos_sensor(0x3012,0x80);
-OV8820_write_cmos_sensor(0x3013,0x39);
-OV8820_write_cmos_sensor(0x3104,0x20);
-OV8820_write_cmos_sensor(0x3106,0x15);
-OV8820_write_cmos_sensor(0x0100,0x01);
-	
-    OV8825DB("OV8820PreviewSetting exit :\n ");
-}
-
-void OV8820CaptureSetting(void)
-{
-
- OV8825DB("OV8820CaptureSetting enter :\n ");
-
-	OV8820_write_cmos_sensor(0x0100,0x00);
-OV8820_write_cmos_sensor(0x3600,0x05);
-OV8820_write_cmos_sensor(0x3601,0x32);
-OV8820_write_cmos_sensor(0x3602,0x44);
-OV8820_write_cmos_sensor(0x3702,0x70);
-OV8820_write_cmos_sensor(0x3703,0x4f);
-OV8820_write_cmos_sensor(0x3704,0x69);
-OV8820_write_cmos_sensor(0x3706,0x7b);
-OV8820_write_cmos_sensor(0x3708,0x85);
-OV8820_write_cmos_sensor(0x370a,0x12);
-OV8820_write_cmos_sensor(0x370e,0x00);
-OV8820_write_cmos_sensor(0x3712,0xcc);
-OV8820_write_cmos_sensor(0x3800,0x00);
-OV8820_write_cmos_sensor(0x3801,0x00);
-OV8820_write_cmos_sensor(0x3802,0x00);
-OV8820_write_cmos_sensor(0x3803,0x00);
-OV8820_write_cmos_sensor(0x3804,0x0c);
-OV8820_write_cmos_sensor(0x3805,0xdf);
-OV8820_write_cmos_sensor(0x3806,0x09);
-OV8820_write_cmos_sensor(0x3807,0x9b);
-OV8820_write_cmos_sensor(0x3808,0x0c);
-OV8820_write_cmos_sensor(0x3809,0xc0);
-OV8820_write_cmos_sensor(0x380a,0x09);
-OV8820_write_cmos_sensor(0x380b,0x90);
-OV8820_write_cmos_sensor(0x380c,0x0e);
-OV8820_write_cmos_sensor(0x380d,0x30);
-OV8820_write_cmos_sensor(0x380e,0x0a);   
-OV8820_write_cmos_sensor(0x380f,0x0c);
-OV8820_write_cmos_sensor(0x3810,0x00);
-OV8820_write_cmos_sensor(0x3811,0x10);
-OV8820_write_cmos_sensor(0x3812,0x00);
-OV8820_write_cmos_sensor(0x3813,0x06);
-OV8820_write_cmos_sensor(0x3814,0x11);
-OV8820_write_cmos_sensor(0x3815,0x11);
-OV8820_write_cmos_sensor(0x3820,0x80);
-OV8820_write_cmos_sensor(0x3821,0x16);
-OV8820_write_cmos_sensor(0x3f00,0x02);
-OV8820_write_cmos_sensor(0x3f05,0x10);
-OV8820_write_cmos_sensor(0x4600,0x04);
-OV8820_write_cmos_sensor(0x4601,0x00);
-OV8820_write_cmos_sensor(0x4602,0x78);
-OV8820_write_cmos_sensor(0x4837,0x18);
-OV8820_write_cmos_sensor(0x5068,0x00);
-OV8820_write_cmos_sensor(0x506a,0x00);
-OV8820_write_cmos_sensor(0x5780,0xfc);
-OV8820_write_cmos_sensor(0x5c00,0x80);
-OV8820_write_cmos_sensor(0x5c01,0x00);
-OV8820_write_cmos_sensor(0x5c02,0x00);
-OV8820_write_cmos_sensor(0x5c03,0x00);
-OV8820_write_cmos_sensor(0x5c04,0x00);
-OV8820_write_cmos_sensor(0x5c08,0x10);
-OV8820_write_cmos_sensor(0x6900,0x61);
-OV8820_write_cmos_sensor(0x4005,0x1a);
-OV8820_write_cmos_sensor(0x404f,0x8f);
-OV8820_write_cmos_sensor(0x3003,0xce);
-OV8820_write_cmos_sensor(0x3004,0xdc);
-OV8820_write_cmos_sensor(0x3005,0x00);
-OV8820_write_cmos_sensor(0x3006,0x10);
-OV8820_write_cmos_sensor(0x3007,0x43);
-OV8820_write_cmos_sensor(0x3011,0x01);
-OV8820_write_cmos_sensor(0x3012,0x80);
-OV8820_write_cmos_sensor(0x3013,0x39);
-OV8820_write_cmos_sensor(0x3104,0x20);
-OV8820_write_cmos_sensor(0x3106,0x15);
-OV8820_write_cmos_sensor(0x0100,0x01);
-	//mDELAY(20);
-	OV8825DB("OV8820CaptureSetting exit :\n ");
-}
