@@ -32,9 +32,9 @@ on post-fs-data
     chown system system /dev/ttyMT2
 
 # Turn off MT6620 by default
-    chmod 0664 /sys/class/rfkill/rfkill0/state
-    chown system system /sys/class/rfkill/rfkill0/state
-    write sys/class/rfkill/rfkill0/state 0
+#    chmod 0664 /sys/class/rfkill/rfkill0/state
+#    chown system system /sys/class/rfkill/rfkill0/state
+#    write sys/class/rfkill/rfkill0/state 0
 
 
 # STP, WMT, GPS, FM and BT Driver

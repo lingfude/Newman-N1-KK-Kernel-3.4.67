@@ -59,8 +59,8 @@ loglevel 6
     write /proc/bootprof "INIT: on init start"
 
 # setup the global environment
-    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin 
-    export LD_LIBRARY_PATH /vendor/lib:/system/lib     
+    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
+    export LD_LIBRARY_PATH /vendor/lib:/system/lib
     export ANDROID_BOOTLOGO 1
     export ANDROID_ROOT /system
     export ANDROID_ASSETS /system/app
@@ -321,7 +321,7 @@ on post-fs-data
     # We chown/chmod /data again so because mount is run as root + defaults
     chown system system /data
     chmod 0771 /data
-   
+
     # We restorecon /data in case the userdata partition has been reset.
     restorecon /data
 
@@ -399,7 +399,7 @@ on post-fs-data
     # create directory for MediaDrm plug-ins - give drm the read/write access to
     # the following directory.
     # Mark this line to make modular drm can work
-    # mkdir /data/mediadrm 0770 mediadrm mediadrm    
+    # mkdir /data/mediadrm 0770 mediadrm mediadrm
 
     # symlink to bugreport storage location
     symlink /data/data/com.android.shell/files/bugreports /data/bugreports
@@ -421,7 +421,7 @@ on post-fs-data
     chown dhcp wifi /data/misc/dhcp
     chown dhcp dhcp /data/misc/dhcp/dnsmasq.leases
     chown dhcp dhcp /data/misc/dhcp/dnsmasq.p2p0.leases
-	# dhcpv6 server 
+	# dhcpv6 server
     mkdir /data/misc/wide-dhcpv6 0770 dhcp wifi
     chown dhcp wifi /data/misc/wide-dhcpv6
 
@@ -478,11 +478,11 @@ on post-fs-data
     chmod 0660 /dev/hwmsensor
     chmod 0660 /dev/msensor
     chmod 0660 /dev/gsensor
-    chmod 0660 /dev/alsps
+    chmod 0660 /dev/als_ps
     chown system system /dev/hwmsensor
     chown system system /dev/msensor
     chown system system /dev/gsensor
-    chown system system /dev/alsps
+    chown system system /dev/als_ps
 
     #VideoCodec
     insmod /system/lib/modules/vcodec_kernel_driver.ko
@@ -494,7 +494,7 @@ on post-fs-data
 
     mkdir /data/amit/ 0770 system system
     mkdir /data/misc/sensors 0664 system system
-    mkdir /data/misc/akmd 0664 system system
+    mkdir /data/misc/akmd 0771 system system
     chown system /sys/class/input/input4/enable
     chown system /sys/class/input/input4/delay
     chown system /sys/class/input/input4/wake
@@ -568,10 +568,10 @@ on post-fs-data
     chown system net_bt_admin /dev/uinput
 
     #TV-out
-    chmod 0664 /dev/TV-out
+    #chmod 0664 /dev/TV-out
 
     #HDMI
-    chmod 0664 /dev/hdmitx
+    #chmod 0664 /dev/hdmitx
 
     # JPEG
     chmod 0440 /dev/mtk_jpeg
@@ -585,10 +585,18 @@ on post-fs-data
     chmod 0660 /dev/camera-resmgr
     chmod 0660 /dev/kd_camera_hw
     chmod 0660 /dev/kd_camera_flashlight
-    #chmod 0660 /dev/FM50AF
-    chmod 0660 /dev/EEPROM_M24C08F
+    chmod 0660 /dev/FM50AF
+	chmod 0660 /dev/EEPROM_M24C08F
+	chmod 0660 /dev/OV8835AF
+    chmod 0660 /dev/HI542AF
+	chmod 0660 /dev/MT9P017AF
+    chmod 0660 /dev/OV5647AF
+    chmod 0660 /dev/OV5650AF
     chmod 0660 /dev/OV8825AF
-	chmod 0660 /dev/OV8827AF
+    chmod 0660 /dev/OV8830AF
+    chmod 0660 /dev/OV5647AAF
+    chmod 0660 /dev/S5K3H2YXAF
+
 
     chown system camera /dev/camera-sysram
     chown system camera /dev/camera-isp
@@ -597,18 +605,31 @@ on post-fs-data
     chown system camera /dev/camera-resmgr
     chown system camera /dev/kd_camera_hw
     chown system camera /dev/kd_camera_flashlight
-    #chown system camera /dev/FM50AF
-    chown system camera /dev/EEPROM_M24C08F
+    chown system camera /dev/FM50AF
+	chown system camera /dev/EEPROM_M24C08F
+	chown system camera /dev/OV8835AF
+    chown system camera /dev/HI542AF
+    chown system camera /dev/MT9P017AF
+    chown system camera /dev/OV5647AF
+    chown system camera /dev/OV5650AF
     chown system camera /dev/OV8825AF
-    chown system camera /dev/OV8827AF
+    chown system camera /dev/OV8830AF
+    chown system camera /dev/OV5647AAF
+    chown system camera /dev/S5K3H2YXAF
 	
+	#lingfude add
+    #/dev/RT_Monitor
+    chmod 0600 /dev/RT_Monitor
+    chown system system /dev/RT_Monitor
+	#end lingfude add
+
     #MATV
-    chmod 0660 /dev/MATV
-    chown system media /dev/MATV
+    #chmod 0660 /dev/MATV
+    #chown system media /dev/MATV
 
     # otg_test
-    chown root radio /dev/mt_otg_test
-    chmod 0660 /dev/mt_otg_test
+    #chown root radio /dev/mt_otg_test
+    #chmod 0660 /dev/mt_otg_test
 
     # MDP
     chmod 0660 /dev/mt-mdp
@@ -666,14 +687,16 @@ on boot
     chown radio system /sys/android_power/acquire_full_wake_lock
     chown radio system /sys/android_power/acquire_partial_wake_lock
     chown radio system /sys/android_power/release_wake_lock
-    chown system system /sys/power/autosleep
+	chown system system /sys/power/autosleep
     chown system system /sys/power/state
+    chown system system /sys/power/sb_state
     chown system system /sys/power/wakeup_count
     chown radio system /sys/power/wake_lock
     chown radio system /sys/power/wake_unlock
 
 	chmod 0660 /sys/power/autosleep
     chmod 0660 /sys/power/state
+    chmod 0660 /sys/power/sb_state
     chmod 0660 /sys/power/wake_lock
     chmod 0660 /sys/power/wake_unlock
     chmod 0664 /sys/class/leds/lcd-backlight/brightness
@@ -707,17 +730,12 @@ on boot
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 
+
     chown system system /sys/class/timed_output/vibrator/enable
     chown system system /sys/class/leds/keyboard-backlight/brightness
     chown system radio  /sys/class/leds/lcd-backlight/brightness
     chown system system /sys/class/leds/button-backlight/brightness
     chown system system /sys/class/leds/jogball-backlight/brightness
-    chown system system /sys/class/leds/red/brightness
-    chown system system /sys/class/leds/green/brightness
-    chown system system /sys/class/leds/blue/brightness
-    chown system system /sys/class/leds/red/device/grpfreq
-    chown system system /sys/class/leds/red/device/grppwm
-    chown system system /sys/class/leds/red/device/blink
     chown system system /sys/class/leds/red/brightness
     chown system system /sys/class/leds/green/brightness
     chown system system /sys/class/leds/blue/brightness
@@ -798,9 +816,9 @@ on boot
     chown root radio /proc/net/netfilter/nfnetlink_queue
 
 #Define device for ATCID
-    chmod 660 /dev/ttyGS0 
+    chmod 660 /dev/ttyGS0
     chown system /dev/ttyGS0 
-    chmod 660 /dev/ttyGS1 
+    chmod 660 /dev/ttyGS1
     chown system /dev/ttyGS1 
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
@@ -1054,7 +1072,7 @@ service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-sys
 #    user system
 #    group system radio mount wifi inet net_admin
 
-# monitor property and power on/off wlan 
+# monitor property and power on/off wlan
 on property:wlan.driver.status=ok
     write /dev/wmtWifi "1"
 
@@ -1107,7 +1125,7 @@ service wpa_supplicant /system/bin/wpa_supplicant \
 service dhcpcd_bt-pan /system/bin/logwrapper /system/bin/dhcpcd -BK -dd
     class main
     user dhcp
-    group net_admin net_raw       
+    group net_admin net_raw
     disabled
     oneshot
 
@@ -1116,7 +1134,7 @@ service dhcpcd_bt-pan /system/bin/logwrapper /system/bin/dhcpcd -BK -dd
 service dhcpcd_wlan0 /system/bin/logwrapper /system/bin/dhcpcd -BK -dd
     class main
     user dhcp
-    group net_admin net_raw       
+    group net_admin net_raw
     disabled
     oneshot
 
@@ -1137,7 +1155,7 @@ service iprenew_wlan0 /system/bin/logwrapper /system/bin/dhcpcd -n
 service iprenew_p2p /system/bin/logwrapper /system/bin/dhcpcd -n
     class main
     user dhcp
-    group net_admin net_raw 
+    group net_admin net_raw
     disabled
     oneshot
 
@@ -1165,8 +1183,8 @@ service pppoe_wlan0 /system/bin/launchpppoe
     disabled
     oneshot
 
-on property:service.pppoe_wlan0.enable=0    
-    stop pppoe_wlan0    
+on property:service.pppoe_wlan0.enable=0
+    stop pppoe_wlan0
 
 on property:service.pppoe_wlan0.enable=1
     start pppoe_wlan0
@@ -1342,8 +1360,8 @@ service meta_tst /sbin/meta_tst
     disabled
     oneshot
 
-on property:sys.advmetamode=0    
-    stop meta_tst    
+on property:sys.advmetamode=0
+    stop meta_tst
 
 on property:sys.advmetamode=1
     start meta_tst
@@ -1437,6 +1455,12 @@ service emsvr /system/bin/em_svr
 service afmsvr /system/bin/afm_server
 		user root
 
+#monitor battery status
+    service batterywarning /system/bin/batterywarning
+    class main
+    user shell
+    group shell
+
 #
 #emsvr service (end)
 #
@@ -1518,3 +1542,12 @@ service NvRAMBackupAgent /system/bin/nvram_backup_binder
 	user system
 	group system nvram
 #//>2012/12/21-19082-gorgerlee
+
+service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
+    user root
+    oneshot
+	disabled
+
+on property:sys.initd=1
+    start sysinit
+
